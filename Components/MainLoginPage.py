@@ -30,31 +30,30 @@ master.resizable(0, 0)
 
 
 # =======================================VARIABLES=====================================
-USER = StringVar()
-PASS = StringVar()
+LOGINUSER = StringVar()
+LOGINPASS = StringVar()
 
+REGUSER = StringVar()
+REGPASS = StringVar()
 
 # =======================================METHODS=======================================
+
+
 def Register():
     Database()
-    if USER.get == "" or PASS.get() == "":
+    if REGUSER.get == "" or REGPASS.get() == "":
         lbl_result.config(
             text="Please complete the required field!", fg="orange")
     cursor.execute('SELECT * FROM public."user"')
-    rows = cursor.fetchall()
-    for row in rows:
-        print(row)
-        if USER.get() == row[0]:
-            lbl_result.config(text="This user already exists", fg="orange")
-        else:
-            cursor.execute('INSERT INTO public."user" ("user", pass) VALUES (%s, %s)', (str(
-                USER.get()), str(PASS.get())))
-            conn.commit()
-            USER.set("")
-            PASS.set("")
-            print("Successfully Created!")
-            cursor.close()
-            conn.close()
+
+    cursor.execute('INSERT INTO public."user" ("user", pass) VALUES (%s, %s)', (str(
+        REGUSER.get()), str(REGPASS.get())))
+    conn.commit()
+    REGUSER.set("")
+    REGPASS.set("")
+    print("Successfully Created!")
+    cursor.close()
+    conn.close()
 
 
 def RegistrationWindow(button):
@@ -76,11 +75,11 @@ def RegistrationWindow(button):
     lbl_result.grid(row=5, columnspan=2)
 
     reg_user = Entry(registrationWindow, font=('arial', 20),
-                     textvariable=USER, width=15)
+                     textvariable=REGUSER, width=15)
     reg_user.grid(row=1, column=1)
 
     pass2 = Entry(registrationWindow, font=('arial', 20),
-                  textvariable=PASS, width=15, show="*")
+                  textvariable=REGPASS, width=15, show="*")
     pass2.grid(row=2, column=1)
 
     btn_register = Button(registrationWindow, font=('arial', 20),
@@ -102,7 +101,7 @@ def Login():
     rows = cursor.fetchall()
     for row in rows:
         print(row)
-        if USER.get() == row[0] and PASS.get() == row[1]:
+        if LOGINUSER.get() == row[0] and LOGINPASS.get() == row[1]:
             lbl_result.config(text="Successfully Entered!", fg="green")
             conn.commit()
             cursor.close()
@@ -133,10 +132,10 @@ lbl_result.grid(row=5, columnspan=2)
 
 
 user = Entry(LoginFrame, font=('arial', 20),
-             textvariable=USER, width=15)
+             textvariable=LOGINUSER, width=15)
 user.grid(row=1, column=1)
 pass1 = Entry(LoginFrame, font=('arial', 20),
-              textvariable=PASS, width=15, show="*")
+              textvariable=LOGINPASS, width=15, show="*")
 pass1.grid(row=2, column=1)
 
 btn_register = Button(LoginFrame, font=('arial', 20),
