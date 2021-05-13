@@ -3,15 +3,17 @@ import socket
 from tkinter import *
 import tkinter.messagebox as box
 
-HOST = '127.0.0.1'  # The server's hostname or IP address
-PORT = 65432        # The port used by the server
+HEADER = 64
+PORT = 5050
+SERVER = socket.gethostbyname(socket.gethostname())
+ADDR = (SERVER, PORT)
+DISCONNECT_MESSAGE = "!DISCONNECT"
+FORMAT = 'utf-8'
+ADDR = (SERVER, PORT)
 
-with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-    s.connect((HOST, PORT))
-    s.sendall(b'Hello, world')
-    data = s.recv(1024)
 
-print('Received', repr(data))
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client.connect(ADDR)
 
 
 class Window(Toplevel):
@@ -69,16 +71,24 @@ def RegistrationWindow(button):
     pass2.grid(row=2, column=1)
 
     btn_register = Button(registrationWindow, font=('arial', 20),
-                          text="Register", command=Register)
+                          text="Register", command=send_login_credentials(REGUSER, REGPASS))
     btn_register.grid(row=6, columnspan=2)
 
 
-def Exit():
-    result = tkMessageBox.askquestion(
-        'System', 'Are you sure you want to exit?', icon="warning")
-    if result == 'yes':
-        master.destroy()
-        exit()
+def send(msg):
+    message = msg.encode(FORMAT)
+    msg_length = len(message)
+    send_length = str(msg_length).encode(FORMAT)
+    send_length += b' ' * (HEADER - len(send_length))
+    client.send(send_length)
+    client.send(message)
+
+
+def send_login_credentials(LOGINUSER, LOGINPASS):
+    login = LOGINUSER.get()
+    password = LOGINPASS.get()
+    send(login)
+    send(password)
 
 
 # =====================================FRAMES====================================
@@ -113,7 +123,7 @@ btn_register = Button(LoginFrame, font=('arial', 20),
 btn_register.grid(row=6, columnspan=2)
 
 btn_login = Button(LoginFrame, font=('arial', 20),
-                   text="Login", command=Login)
+                   text="Login", command=lambda: send_login_credentials(LOGINUSER, LOGINPASS))
 btn_login.grid(row=6, columnspan=1)
 
 
