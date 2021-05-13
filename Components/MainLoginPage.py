@@ -44,6 +44,13 @@ REGPASS = StringVar()
 # =======================================METHODS=======================================
 
 
+def RecieveMessage():
+    msg_name_length = client.recv(HEADER).decode(FORMAT)
+    if msg_name_length:
+        msg_name_length = int(msg_name_length)
+        msg_name = client.recv(msg_name_length).decode(FORMAT)
+
+
 def RegistrationWindow(button):
     registrationWindow = Window()
     registrationWindow.title("Registration")
@@ -125,6 +132,13 @@ btn_register.grid(row=6, columnspan=2)
 btn_login = Button(LoginFrame, font=('arial', 20),
                    text="Login", command=lambda: send_login_credentials(LOGINUSER, LOGINPASS))
 btn_login.grid(row=6, columnspan=1)
+
+RecieveMessage()
+
+# async def AccessValidation():
+#     access = RecieveMessage()
+#     if access == "access_granted":
+#         lbl_result.config("Ok", color="green")
 
 
 # ========================================INITIALIZATION===================================

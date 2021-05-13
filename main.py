@@ -17,11 +17,21 @@ except socket.error as e:
 
 
 def Database():
+
     global conn, cursor
     conn = psycopg2.connect(database="decadence", user="decadence",
                             password="12345", host="localhost", port="5432")
     cursor = conn.cursor()
     print("Database opened successfully")
+
+
+def send(msg):
+    message = msg.encode(FORMAT)
+    msg_length = len(message)
+    send_length = str(msg_length).encode(FORMAT)
+    send_length += b' ' * (HEADER - len(send_length))
+    server.send(send_length)
+    server.send(message)
 
 
 def handle_client(conn, addr):
@@ -54,18 +64,37 @@ def Login(msg_name, msg_password):
     Database()
     cursor.execute('SELECT "user", pass, id FROM public."user"')
     rows = cursor.fetchall()
+    valid = False
     for row in rows:
         print(row)
         if msg_name == row[0] and msg_password == row[1]:
             print('he is right')
-            # lbl_result.config(text="Successfully Entered!", fg="green")
+            valid = True
             conn.commit()
             cursor.close()
             conn.close()
             break
         else:
             print("hes not right")
-            # lbl_result.config(text="Incorrect credentials!", fg="red")
+            valid = False
+
+    if valid == True:
+        accessGranted = "access_granted"
+        message = accessGranted.encode(FORMAT)
+        msg_length = len(message)
+        send_length = str(msg_length).encode(FORMAT)
+        send_length += b' ' * (HEADER - len(send_length))
+        server.send(send_length)
+        server.send(message)
+    else:
+        accessGranted = "access_denied"
+        message = accessGranted.encode(FORMAT)
+        msg_length = len(message)
+        send_length = str(msg_length).encode(FORMAT)
+        send_length += b' ' * (HEADER - len(send_length))
+        server.send(send_length)
+        server.send(message)
+
 
 # def Register(msg_login, msg_password):
 #     Database()
@@ -95,4 +124,5 @@ def start():
 
 
 print("Server is starting...")
+
 start()
