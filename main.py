@@ -5,7 +5,7 @@ import threading
 
 HEADER = 64
 FORMAT = 'utf-8'
-PORT = 5050
+PORT = 5040
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!DISCONNECT"
@@ -39,6 +39,7 @@ def handle_client(conn, addr):
 
     connected = True
     while connected:
+
         received = conn.recv(1024)
         received = received.decode(FORMAT)
         try:

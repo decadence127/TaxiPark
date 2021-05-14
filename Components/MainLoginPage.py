@@ -8,7 +8,7 @@ import json
 
 
 HEADER = 64
-PORT = 5050
+PORT = 5040
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!DISCONNECT"
@@ -81,6 +81,7 @@ def RegistrationWindow(button):
 
     lbl_password = Label(registrationWindow, text="Введите пароль:",
                          font=('roboto', 14), bd=14)
+
     lbl_password.grid(row=2)
 
     reg_user = Entry(registrationWindow, font=('roboto', 16),
@@ -92,6 +93,7 @@ def RegistrationWindow(button):
     reg_pass.grid(row=2, column=1)
     btn_register = Button(registrationWindow, font=('roboto', 16),
                           text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 1))
+
     btn_register.grid(row=6, columnspan=2)
 
 
@@ -114,10 +116,12 @@ lbl_title = Label(TitleFrame, text="Таксопарк",
                   font=('roboto', 18), bd=1, width=640)
 lbl_title.pack()
 lbl_username = Label(LoginFrame, text="Введите логин:",
+
                      font=('roboto', 14), bd=18)
 lbl_username.grid(row=1)
 lbl_password = Label(LoginFrame, text="Введите пароль:",
                      font=('roboto', 14), bd=18)
+
 lbl_password.grid(row=2)
 lbl_result = Label(LoginFrame, text="", font=('arial', 18))
 lbl_result.grid(row=5, columnspan=2)
@@ -135,6 +139,7 @@ btn_register.grid(row=6, columnspan=3, padx=180)
 
 btn_login = Button(LoginFrame, font=('roboto', 16),
                    text="Войти", command=lambda: send_login_credentials(LOGINUSER, LOGINPASS, 0))
+
 btn_login.grid(row=6, columnspan=1)
 
 
