@@ -1,11 +1,11 @@
+import json
 import psycopg2
 import socket
 import threading
 
-
 HEADER = 64
 FORMAT = 'utf-8'
-PORT = 5050
+PORT = 5040
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!DISCONNECT"
@@ -17,6 +17,7 @@ except socket.error as e:
 
 
 def Database():
+
     global conn, cursor
     conn = psycopg2.connect(database="decadence", user="decadence",
                             password="12345", host="localhost", port="5432")
@@ -24,29 +25,39 @@ def Database():
     print("Database opened successfully")
 
 
+def send(msg):
+    message = msg.encode(FORMAT)
+    msg_length = len(message)
+    send_length = str(msg_length).encode(FORMAT)
+    send_length += b' ' * (HEADER - len(send_length))
+    server.send(send_length)
+    server.send(message)
+
+
 def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.")
 
     connected = True
     while connected:
-        msg_name_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_name_length:
-            msg_name_length = int(msg_name_length)
-            msg_name = conn.recv(msg_name_length).decode(FORMAT)
+        recvallObject = bytearray()
+        while True:
+            recvObject = conn.recv(4096)
+            if not recvObject:
+                break
+            print('Recv: {}: {}'.format(len(recvObject), recvObject))
+            recvallObject += recvObject
+            break
+        obj = json.loads(recvallObject)
+        print("obj:", obj)
 
-            if msg_name == DISCONNECT_MESSAGE:
-                connected = False
+        # if
+        # msg_name_length = conn.recv(HEADER).decode(FORMAT)
+        # if msg_name_length:
+        #     msg_name_length = int(msg_name_length)
+        #     msg_name = conn.recv(msg_name_length).decode(FORMAT)
 
-            print(f"[{addr}] {msg_name}")
-        msg_password_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_password_length:
-            msg_password_length = int(msg_password_length)
-            msg_password = conn.recv(msg_password_length).decode(FORMAT)
-
-            if msg_password == DISCONNECT_MESSAGE:
-                connected = False
-            print(f"[{addr}] {msg_password}")
-        Login(msg_name, msg_password)
+        #     if msg_name == DISCONNECT_MESSAGE:
+        # Login(msg_name, msg_password)
     conn.close()
 
 
@@ -54,18 +65,37 @@ def Login(msg_name, msg_password):
     Database()
     cursor.execute('SELECT "user", pass, id FROM public."user"')
     rows = cursor.fetchall()
+    valid = False
     for row in rows:
         print(row)
         if msg_name == row[0] and msg_password == row[1]:
             print('he is right')
-            # lbl_result.config(text="Successfully Entered!", fg="green")
+            valid = True
             conn.commit()
             cursor.close()
             conn.close()
             break
         else:
             print("hes not right")
-            # lbl_result.config(text="Incorrect credentials!", fg="red")
+            valid = False
+
+    if valid == True:
+        accessGranted = "access_granted"
+        message = accessGranted.encode(FORMAT)
+        msg_length = len(message)
+        send_length = str(msg_length).encode(FORMAT)
+        send_length += b' ' * (HEADER - len(send_length))
+        server.send(send_length)
+        server.send(message)
+    else:
+        accessGranted = "access_denied"
+        message = accessGranted.encode(FORMAT)
+        msg_length = len(message)
+        send_length = str(msg_length).encode(FORMAT)
+        send_length += b' ' * (HEADER - len(send_length))
+        server.send(send_length)
+        server.send(message)
+
 
 # def Register(msg_login, msg_password):
 #     Database()
@@ -95,4 +125,5 @@ def start():
 
 
 print("Server is starting...")
+
 start()
