@@ -1,6 +1,5 @@
 
 from json import encoder
-import re
 import socket
 from tkinter import *
 import tkinter.messagebox as box
@@ -55,6 +54,8 @@ LOGINPASS = StringVar()
 REGUSER = StringVar()
 REGPASS = StringVar()
 
+REGKEY = StringVar()
+
 
 def send_login_credentials(login, password, token):
     if login.get() == "" or login.get() == "":
@@ -75,7 +76,7 @@ def send_login_credentials(login, password, token):
                 DashBoardWindow()
             elif str(answer) == "access_denied":
                 box.showerror("Invalid credentials", "Try again or sign up")
-        if token == 1:
+        elif token == 1:
             reg_answer_length = client.recv(HEADER).decode(FORMAT)
             reg_answer = client.recv(int(reg_answer_length))
             reg_answer = reg_answer.decode(FORMAT)
@@ -83,6 +84,50 @@ def send_login_credentials(login, password, token):
                 box.showinfo("Успех", "Успешно зарегистрированы")
             elif str(reg_answer) == "validation_error":
                 box.showerror("Ошибка", "Такой пользователь уже существует!")
+        elif token == 3:
+            regadm_answer_length = client.recv(HEADER).decode(FORMAT)
+            regadm_answer = client.recv(int(regadm_answer_length))
+            regadm_answer = regadm_answer.decode(FORMAT)
+            if str(regadm_answer) == "bad_key":
+                box.showerror(
+                    "Ошибка", "Ключ не подходит! Вы не были зарегистрированы")
+            elif str(regadm_answer) == "good_key":
+                box.showinfo("Вы были зарегистрированы как администратор!")
+
+
+def AdminRegistrationWindow():
+    registrationAdminWindow = Toplevel(master)
+    registrationAdminWindow.title("Registration Admin panel")
+    registrationAdminWindow.geometry("480x280")
+    registrationAdminWindow.resizable(False, False)
+    registrationAdminWindow.iconphoto(False, icon)
+    lbl_title.pack(side=TOP)
+    lbl_username = Label(registrationAdminWindow, text="Введите логин:",
+                         font=('courier', 14), bd=14)
+    lbl_username.grid(row=1)
+
+    lbl_password = Label(registrationAdminWindow, text="Введите пароль:",
+                         font=('courier', 14), bd=14)
+
+    lbl_password.grid(row=2)
+
+    reg_user = Entry(registrationAdminWindow, font=('verdana', 16),
+                     textvariable=REGUSER, width=15)
+    reg_user.grid(row=1, column=1)
+
+    reg_pass = Entry(registrationAdminWindow, font=('verdana', 16),
+                     textvariable=REGPASS, width=15, show="*")
+    reg_pass.grid(row=2, column=1)
+    lbl_keyword = Label(registrationAdminWindow, text="Введите секретный ключ:",
+                        font=('courier', 14), bd=14)
+    lbl_keyword.grid(row=3)
+    reg_keyword = Entry(registrationAdminWindow, font=(
+        'verdana', 16), textvariable=REGKEY, width=15)
+    reg_keyword.grid(row=3, column=1)
+
+    btn_register = Button(registrationAdminWindow, font=('arial', 16),
+                          text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 2))
+    btn_register.grid(row=6, columnspan=2)
 
 
 def RegistrationWindow(button):
@@ -92,6 +137,9 @@ def RegistrationWindow(button):
     registrationWindow.resizable(False, False)
     registrationWindow.iconphoto(False, icon)
     lbl_title.pack(side=TOP)
+    lbl_checkbutton = Checkbutton(
+        registrationWindow, text="Администратор", command=lambda: AdminRegistrationWindow())
+    lbl_checkbutton.grid(row=4)
     lbl_username = Label(registrationWindow, text="Введите логин:",
                          font=('courier', 14), bd=14)
     lbl_username.grid(row=1)

@@ -51,14 +51,38 @@ def handle_client(conn, addr):
 
         if(int(res["login_token"]) == 0):
             Login(res["login"], res["password"])
-
         elif(int(res["login_token"]) == 1):
             Register(res["login"], res["password"])
+        elif(int(res["login_token"] == 2)):
+            RegisterAdmin(res["login"], res["password"])
 
         else:
             print("Error")
 
     conn.close()
+
+
+def RegisterAdmin(msg_name, msg_password):
+    Database()
+    cursor.execute('SELECT "user", pass, id FROM public."user"')
+    rows = cursor.fetchall()
+    for row in rows:
+        print(row)
+        if msg_name == row[0]:
+            con.commit()
+            cursor.close()
+            con.close()
+            send("validation_error")
+            return
+
+    cursor.execute('SELECT * FROM public."user"')
+    cursor.execute('INSERT INTO public."user" ("user", pass) VALUES (%s, %s)',
+                   (msg_name, str(msg_password)))
+    con.commit()
+    print("Successfully Created!")
+    send("good_key")
+    cursor.close()
+    con.close()
 
 
 def Login(msg_name, msg_password):
