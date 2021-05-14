@@ -5,7 +5,7 @@ import threading
 
 HEADER = 64
 FORMAT = 'utf-8'
-PORT = 5040
+PORT = 5050
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!DISCONNECT"
@@ -18,10 +18,10 @@ except socket.error as e:
 
 def Database():
 
-    global conn, cursor
-    conn = psycopg2.connect(database="decadence", user="postgres",
-                            password="12344321", host="localhost", port="5432")
-    cursor = conn.cursor()
+    global con, cursor
+    con = psycopg2.connect(database="decadence", user="postgres",
+                           password="12344321", host="localhost", port="5432")
+    cursor = con.cursor()
     print("Database opened successfully")
 
 
@@ -30,8 +30,8 @@ def send(msg):
     msg_length = len(message)
     send_length = str(msg_length).encode(FORMAT)
     send_length += b' ' * (HEADER - len(send_length))
-    server.send(send_length)
-    server.send(message)
+    conn.send(send_length)
+    conn.send(message)
 
 
 def handle_client(conn, addr):
@@ -71,9 +71,9 @@ def Login(msg_name, msg_password):
         if msg_name == row[0] and msg_password == row[1]:
             print('he is right')
             valid = True
-            conn.commit()
+            con.commit()
             cursor.close()
-            conn.close()
+            con.close()
             break
         else:
             print("hes not right")
@@ -81,38 +81,40 @@ def Login(msg_name, msg_password):
 
     if valid == True:
         accessGranted = "access_granted"
-        message = accessGranted.encode(FORMAT)
-        msg_length = len(message)
-        send_length = str(msg_length).encode(FORMAT)
-        send_length += b' ' * (HEADER - len(send_length))
-        server.send(send_length)
-        server.send(message)
+        send(accessGranted)
     else:
         accessGranted = "access_denied"
-        message = accessGranted.encode(FORMAT)
-        msg_length = len(message)
-        send_length = str(msg_length).encode(FORMAT)
-        send_length += b' ' * (HEADER - len(send_length))
-        server.send(send_length)
-        server.send(message)
+        send(accessGranted)
 
 
 def Register(msg_login, msg_password):
     Database()
-    cursor.execute('SELECT * FROM public."user"')
+    cursor.execute('SELECT "user", pass, id FROM public."user"')
+    rows = cursor.fetchall()
+    for row in rows:
+        print(row)
+        if msg_login == row[0]:
+            con.commit()
+            cursor.close()
+            con.close()
+            send("validation_error")
+            return
 
+    cursor.execute('SELECT * FROM public."user"')
     cursor.execute('INSERT INTO public."user" ("user", pass) VALUES (%s, %s)',
                    (msg_login, str(msg_password)))
-    conn.commit()
+    con.commit()
     print("Successfully Created!")
+    send("reg_success")
     cursor.close()
-    conn.close()
+    con.close()
 
 
 def start():
     server.listen()
     print(f"[LISTENING] Server is listening on {SERVER}")
     while True:
+        global conn, addr
         conn, addr = server.accept()
         thread = threading.Thread(target=handle_client, args=(conn, addr))
         thread.start()
