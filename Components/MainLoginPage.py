@@ -3,7 +3,7 @@ import socket
 from tkinter import *
 import tkinter.messagebox as box
 import json
-
+from Components.classes import LoginModel
 HEADER = 64
 PORT = 5040
 SERVER = socket.gethostbyname(socket.gethostname())
