@@ -2,15 +2,14 @@
 import socket
 from tkinter import *
 import tkinter.messagebox as box
+import json
 
 HEADER = 64
-PORT = 5050
+PORT = 5040
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!DISCONNECT"
 FORMAT = 'utf-8'
-ADDR = (SERVER, PORT)
-
 
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
@@ -34,21 +33,11 @@ master.geometry("%dx%d+%d+%d" % (width, height, x, y))
 master.resizable(0, 0)
 
 
-# =======================================VARIABLES=====================================
 LOGINUSER = StringVar()
 LOGINPASS = StringVar()
 
 REGUSER = StringVar()
 REGPASS = StringVar()
-
-# =======================================METHODS=======================================
-
-
-def RecieveMessage():
-    msg_name_length = client.recv(HEADER).decode(FORMAT)
-    if msg_name_length:
-        msg_name_length = int(msg_name_length)
-        msg_name = client.recv(msg_name_length).decode(FORMAT)
 
 
 def RegistrationWindow(button):
@@ -58,11 +47,11 @@ def RegistrationWindow(button):
     button.configure(state="disabled")
 
     lbl_title.pack()
-    lbl_username = Label(registrationWindow, text="Username:",
+    lbl_username = Label(registrationWindow, text="Введите логин:",
                          font=('arial', 18), bd=18)
     lbl_username.grid(row=1)
 
-    lbl_password = Label(registrationWindow, text="Password:",
+    lbl_password = Label(registrationWindow, text="Введите пароль:",
                          font=('arial', 18), bd=18)
     lbl_password.grid(row=2)
 
@@ -76,9 +65,10 @@ def RegistrationWindow(button):
     pass2 = Entry(registrationWindow, font=('arial', 20),
                   textvariable=REGPASS, width=15, show="*")
     pass2.grid(row=2, column=1)
+    registrationData = LoginModel(REGUSER.get(), REGPASS.get(), 1)
 
     btn_register = Button(registrationWindow, font=('arial', 20),
-                          text="Register", command=send_login_credentials(REGUSER, REGPASS))
+                          text="Register", command=send_login_credentials(registrationData))
     btn_register.grid(row=6, columnspan=2)
 
 
@@ -91,14 +81,11 @@ def send(msg):
     client.send(message)
 
 
-def send_login_credentials(LOGINUSER, LOGINPASS):
-    login = LOGINUSER.get()
-    password = LOGINPASS.get()
-    send(login)
-    send(password)
+def send_login_credentials(registrationData):
+    pickleregistrationData = json.dumps(registrationData.toJSON())
+    client.sendall(pickleregistrationData)
 
 
-# =====================================FRAMES====================================
 TitleFrame = Frame(master, height=100, width=640, bd=1, relief=SOLID)
 TitleFrame.pack(side=TOP)
 LoginFrame = Frame(master)
@@ -108,10 +95,10 @@ LoginFrame.pack(side=TOP, pady=20)
 lbl_title = Label(TitleFrame, text="Таксопарк",
                   font=('arial', 18), bd=1, width=640)
 lbl_title.pack()
-lbl_username = Label(LoginFrame, text="Username:",
+lbl_username = Label(LoginFrame, text="Введите логин:",
                      font=('arial', 18), bd=18)
 lbl_username.grid(row=1)
-lbl_password = Label(LoginFrame, text="Password:",
+lbl_password = Label(LoginFrame, text="Введите пароль:",
                      font=('arial', 18), bd=18)
 lbl_password.grid(row=2)
 lbl_result = Label(LoginFrame, text="", font=('arial', 18))
@@ -124,23 +111,15 @@ user.grid(row=1, column=1)
 pass1 = Entry(LoginFrame, font=('arial', 20),
               textvariable=LOGINPASS, width=15, show="*")
 pass1.grid(row=2, column=1)
-
+loginData = LoginModel(LOGINUSER.get(), LOGINPASS.get(), 0)
 btn_register = Button(LoginFrame, font=('arial', 20),
                       text="Register", command=lambda: RegistrationWindow(btn_register))
 btn_register.grid(row=6, columnspan=2)
 
 btn_login = Button(LoginFrame, font=('arial', 20),
-                   text="Login", command=lambda: send_login_credentials(LOGINUSER, LOGINPASS))
+                   text="Login", command=lambda: send_login_credentials(loginData))
 btn_login.grid(row=6, columnspan=1)
 
-RecieveMessage()
 
-# async def AccessValidation():
-#     access = RecieveMessage()
-#     if access == "access_granted":
-#         lbl_result.config("Ok", color="green")
-
-
-# ========================================INITIALIZATION===================================
 if __name__ == '__main__':
     master.mainloop()

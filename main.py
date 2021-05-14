@@ -1,11 +1,11 @@
+import json
 import psycopg2
 import socket
 import threading
 
-
 HEADER = 64
 FORMAT = 'utf-8'
-PORT = 5050
+PORT = 5040
 SERVER = socket.gethostbyname(socket.gethostname())
 ADDR = (SERVER, PORT)
 DISCONNECT_MESSAGE = "!DISCONNECT"
@@ -39,24 +39,25 @@ def handle_client(conn, addr):
 
     connected = True
     while connected:
-        msg_name_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_name_length:
-            msg_name_length = int(msg_name_length)
-            msg_name = conn.recv(msg_name_length).decode(FORMAT)
+        recvallObject = bytearray()
+        while True:
+            recvObject = conn.recv(4096)
+            if not recvObject:
+                break
+            print('Recv: {}: {}'.format(len(recvObject), recvObject))
+            recvallObject += recvObject
+            break
+        obj = json.loads(recvallObject)
+        print("obj:", obj)
 
-            if msg_name == DISCONNECT_MESSAGE:
-                connected = False
+        # if
+        # msg_name_length = conn.recv(HEADER).decode(FORMAT)
+        # if msg_name_length:
+        #     msg_name_length = int(msg_name_length)
+        #     msg_name = conn.recv(msg_name_length).decode(FORMAT)
 
-            print(f"[{addr}] {msg_name}")
-        msg_password_length = conn.recv(HEADER).decode(FORMAT)
-        if msg_password_length:
-            msg_password_length = int(msg_password_length)
-            msg_password = conn.recv(msg_password_length).decode(FORMAT)
-
-            if msg_password == DISCONNECT_MESSAGE:
-                connected = False
-            print(f"[{addr}] {msg_password}")
-        Login(msg_name, msg_password)
+        #     if msg_name == DISCONNECT_MESSAGE:
+        # Login(msg_name, msg_password)
     conn.close()
 
 
