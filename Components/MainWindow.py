@@ -116,12 +116,17 @@ def RegistrationWindow(button):
 
 def DashBoardWindow():
     LoginFrame.destroy()
+    TitleFrame.destroy()
     dashboardTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
     dashboardTitleFrame.pack(side=TOP)
 
     dashboardFrame = Frame(master)
     dashboardFrame.pack(side=TOP, pady=20)
+
+    lbl_title = Label(dashboardTitleFrame, text=f"Добро пожаловать, {LOGINUSER.get()}!",
+                      font=('courier', 14), bd=1, width=640)
+    lbl_title.pack()
 
 
 def send(msg):
