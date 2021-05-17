@@ -21,6 +21,7 @@ class LoginModel:
     login = ""
     password = ""
     login_token = 0
+    secret_key = ""
 
     def __init__(self) -> None:
         pass
@@ -29,6 +30,12 @@ class LoginModel:
         self.login = login
         self.password = password
         self.login_token = login_token
+
+    def __init__(self, login, password, login_token, secret_key):
+        self.login = login
+        self.password = password
+        self.login_token = login_token
+        self.secret_key = secret_key
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
@@ -56,15 +63,22 @@ REGPASS = StringVar()
 
 REGKEY = StringVar()
 
+DESERIALIZED_LIST = []
 
-def send_login_credentials(login, password, token):
+
+def recieveDataHandler():
+    pass
+
+
+def send_login_credentials(login, password, token, secret_key):
     if login.get() == "" or login.get() == "":
-        box.showerror("Error", "Enter User Name And Password")
+        box.showerror("Ошибка", "Поля не должны быть пустыми ")
         return
     else:
         tempLogin = login.get()
         tempPass = password.get()
-        loginData = LoginModel(tempLogin, tempPass, token)
+        tempKey = secret_key.get()
+        loginData = LoginModel(tempLogin, tempPass, token, tempKey)
         JsonObject = loginData.toJSON()
         serialized = json.dumps(JsonObject)
         client.sendall(serialized.encode(FORMAT))
@@ -75,40 +89,67 @@ def send_login_credentials(login, password, token):
             if str(answer) == "access_granted":
                 DashBoardWindow()
             elif str(answer) == "access_denied":
-                box.showerror("Invalid credentials", "Try again or sign up")
+                box.showerror("Данные были введены неверно",
+                              "Попробуйте снова или зарегистрируйтесь")
+                LoginPanel()
+            elif str(answer) == "access_granted_admin":
+                AdministratorDashboard()
         elif token == 1:
             reg_answer_length = client.recv(HEADER).decode(FORMAT)
             reg_answer = client.recv(int(reg_answer_length))
             reg_answer = reg_answer.decode(FORMAT)
             if str(reg_answer) == "reg_success":
-                box.showinfo("Успех", "Успешно зарегистрированы")
+                box.showinfo("Успех", "Пользователь успешно зарегистрирован")
             elif str(reg_answer) == "validation_error":
                 box.showerror("Ошибка", "Такой пользователь уже существует!")
-        elif token == 3:
+        elif token == 2:
             regadm_answer_length = client.recv(HEADER).decode(FORMAT)
             regadm_answer = client.recv(int(regadm_answer_length))
             regadm_answer = regadm_answer.decode(FORMAT)
+            print(regadm_answer)
             if str(regadm_answer) == "bad_key":
                 box.showerror(
                     "Ошибка", "Ключ не подходит! Вы не были зарегистрированы")
             elif str(regadm_answer) == "good_key":
-                box.showinfo("Вы были зарегистрированы как администратор!")
+                box.showinfo(
+                    "Успех", "Вы были зарегистрированы как администратор!")
+            elif str(regadm_answer) == "validation_error":
+                box.showerror("Ошибка", "Такой пользователь уже существует")
 
 
-def AdminRegistrationWindow():
+def RequestDataList():
+    tempList = []
+    emptyRequest = LoginModel("", "", 3, "")
+    JsonRequest = emptyRequest.toJSON()
+    serializedRequest = json.dumps(JsonRequest)
+    client.sendall(serializedRequest.encode(FORMAT))
+    del_answer = client.recv(1024)
+    del_answer = del_answer.decode(FORMAT)
+    try:
+        deserialized_list = json.loads(del_answer)
+    except (TypeError, ValueError) as e:
+        raise Exception('Data received was not in JSON format')
+    res = json.loads(deserialized_list)
+    print(type(res))
+    tempList = res[0]
+    return tempList
+
+
+def AdminRegistrationWindow(button):
+    global registrationAdminWindow
     registrationAdminWindow = Toplevel(master)
     registrationAdminWindow.title("Registration Admin panel")
-    registrationAdminWindow.geometry("480x280")
+    registrationAdminWindow.geometry("520x280")
     registrationAdminWindow.resizable(False, False)
     registrationAdminWindow.iconphoto(False, icon)
-    lbl_title.pack(side=TOP)
+    registrationAdminWindow.protocol(
+        "WM_DELETE_WINDOW", deleteAdminWindow)
     lbl_username = Label(registrationAdminWindow, text="Введите логин:",
                          font=('courier', 14), bd=14)
     lbl_username.grid(row=1)
 
     lbl_password = Label(registrationAdminWindow, text="Введите пароль:",
                          font=('courier', 14), bd=14)
-
     lbl_password.grid(row=2)
 
     reg_user = Entry(registrationAdminWindow, font=('verdana', 16),
@@ -126,20 +167,72 @@ def AdminRegistrationWindow():
     reg_keyword.grid(row=3, column=1)
 
     btn_register = Button(registrationAdminWindow, font=('arial', 16),
-                          text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 2))
+                          text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 2, REGKEY))
     btn_register.grid(row=6, columnspan=2)
 
 
+def deleteAdminWindow():
+    registrationAdminWindow.destroy()
+    reg_button["state"] = 'normal'
+
+
+def deleteWindow():
+    registrationWindow.destroy()
+    reg_button["state"] = 'normal'
+
+
+def LoginPanel():
+    global reg_button
+    TitleFrame = Frame(master, height=100, width=640, bd=1, relief=SOLID)
+    TitleFrame.pack(side=TOP)
+    LoginFrame = Frame(master)
+    LoginFrame.pack(side=TOP, pady=20)
+
+    lbl_title = Label(TitleFrame, text="Таксопарк",
+                      font=('courier', 18), bd=1, width=640)
+    lbl_title.pack()
+    lbl_username = Label(LoginFrame, text="Введите логин:",
+
+                         font=('courier', 14), bd=18)
+    lbl_username.grid(row=1)
+    lbl_password = Label(LoginFrame, text="Введите пароль:",
+                         font=('courier', 14), bd=18)
+
+    lbl_password.grid(row=2)
+    lbl_result = Label(LoginFrame, text="", font=('arial', 18))
+    lbl_result.grid(row=5, columnspan=2)
+
+    user = Entry(LoginFrame, font=('verdana', 16),
+                 textvariable=LOGINUSER, width=15)
+    user.grid(row=1, column=1)
+    pass1 = Entry(LoginFrame, font=('verdana', 16),
+                  textvariable=LOGINPASS, width=15, show="*")
+    pass1.grid(row=2, column=1)
+
+    reg_button = Button(LoginFrame, font=('arial', 16),
+                        text="Зарегистрироваться", command=lambda: RegistrationWindow(reg_button))
+    reg_button.grid(row=6, columnspan=3, padx=180)
+
+    btn_login = Button(LoginFrame, font=('arial', 16),
+                       text="Войти", command=lambda: [send_login_credentials(LOGINUSER, LOGINPASS, 0, REGKEY), LoginFrame.destroy(), TitleFrame.destroy()])
+
+    btn_login.grid(row=6, columnspan=1)
+
+
 def RegistrationWindow(button):
+    global registrationWindow
     registrationWindow = Toplevel(master)
     registrationWindow.title("Registration")
-    registrationWindow.geometry("480x280")
+    registrationWindow.geometry("520x280")
     registrationWindow.resizable(False, False)
     registrationWindow.iconphoto(False, icon)
-    lbl_title.pack(side=TOP)
+    button["state"] = 'disabled'
+    registrationWindow.protocol(
+        "WM_DELETE_WINDOW", deleteWindow)
     lbl_checkbutton = Checkbutton(
-        registrationWindow, text="Администратор", command=lambda: AdminRegistrationWindow())
+        registrationWindow, text="Администратор", command=lambda: [AdminRegistrationWindow(button), registrationWindow.destroy()])
     lbl_checkbutton.grid(row=4)
+
     lbl_username = Label(registrationWindow, text="Введите логин:",
                          font=('courier', 14), bd=14)
     lbl_username.grid(row=1)
@@ -158,13 +251,34 @@ def RegistrationWindow(button):
     reg_pass.grid(row=2, column=1)
 
     btn_register = Button(registrationWindow, font=('arial', 16),
-                          text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 1))
+                          text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 1, REGKEY))
     btn_register.grid(row=6, columnspan=2)
 
 
+def AdministratorDashboard():
+    adminDashboardTitleFrame = Frame(
+        master, height=100, width=640, bd=1, relief=SOLID)
+    adminDashboardTitleFrame.pack(side=TOP)
+
+    adminDashboardFrame = Frame(master)
+    adminDashboardFrame.pack(pady=20)
+
+    lbl_title = Label(adminDashboardTitleFrame, text=f"Добро пожаловать, {LOGINUSER.get()}, в панель администратора!",
+                      font=('courier', 14), bd=1, width=640)
+    lbl_title.pack()
+
+    btn_logout = Button(adminDashboardFrame, text="Выйти", font=(
+        'Arial', 14), command=lambda: [adminDashboardFrame.destroy(), adminDashboardTitleFrame.destroy(), LoginPanel()])
+    btn_logout.grid(row=1, columnspan=2, padx=520)
+    btn_adduser = Button(adminDashboardFrame, text="Добавить пользователя", font=(
+        'Arial', 14), command=lambda: RegistrationWindow(btn_adduser))
+    btn_adduser.grid(row=2, column=0, sticky=W, padx=80, pady=10)
+    btn_deleteuser = Button(adminDashboardFrame, text="Удалить пользователя", font=(
+        'Arial', 14), command=lambda: [DeletionWindow(), adminDashboardTitleFrame.destroy(), adminDashboardFrame.destroy()])
+    btn_deleteuser.grid(row=3, column=0, sticky=W, padx=80, pady=10)
+
+
 def DashBoardWindow():
-    LoginFrame.destroy()
-    TitleFrame.destroy()
     dashboardTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
     dashboardTitleFrame.pack(side=TOP)
@@ -177,6 +291,28 @@ def DashBoardWindow():
     lbl_title.pack()
 
 
+def DeletionWindow():
+    tempList = []
+    tempList = RequestDataList()
+    deletionTitleFrame = Frame(
+        master, height=100, width=640, bd=1, relief=SOLID)
+    deletionTitleFrame.pack(side=TOP)
+    lbl_title = Label(deletionTitleFrame, text="Меню удаления пользователя", font=(
+        'courier', 14), bd=1, width=640)
+    lbl_title.pack()
+
+    deletionWindow = Frame(master)
+    deletionWindow.pack(side=TOP)
+    text = Listbox(deletionWindow, width=640, bd=1, relief=SOLID)
+    for i in tempList:
+        textPermission = "Администратор" if i[3] == 1 else "Пользователь"
+        text.insert(
+            0, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission)
+    text.pack(side=TOP, pady=20)
+    del_btn = Button(deletionWindow, text="Удалить", font=('Arial', 14))
+    del_btn.pack(side=LEFT, pady=10, padx=20)
+
+
 def send(msg):
     message = msg.encode(FORMAT)
     msg_length = len(message)
@@ -186,41 +322,7 @@ def send(msg):
     client.send(message)
 
 
-TitleFrame = Frame(master, height=100, width=640, bd=1, relief=SOLID)
-TitleFrame.pack(side=TOP)
-LoginFrame = Frame(master)
-LoginFrame.pack(side=TOP, pady=20)
-
-
-lbl_title = Label(TitleFrame, text="Таксопарк",
-                  font=('courier', 18), bd=1, width=640)
-lbl_title.pack()
-lbl_username = Label(LoginFrame, text="Введите логин:",
-
-                     font=('courier', 14), bd=18)
-lbl_username.grid(row=1)
-lbl_password = Label(LoginFrame, text="Введите пароль:",
-                     font=('courier', 14), bd=18)
-
-lbl_password.grid(row=2)
-lbl_result = Label(LoginFrame, text="", font=('arial', 18))
-lbl_result.grid(row=5, columnspan=2)
-
-
-user = Entry(LoginFrame, font=('verdana', 16),
-             textvariable=LOGINUSER, width=15)
-user.grid(row=1, column=1)
-pass1 = Entry(LoginFrame, font=('verdana', 16),
-              textvariable=LOGINPASS, width=15, show="*")
-pass1.grid(row=2, column=1)
-btn_register = Button(LoginFrame, font=('arial', 16),
-                      text="Зарегистрироваться", command=lambda: RegistrationWindow(btn_register))
-btn_register.grid(row=6, columnspan=3, padx=180)
-
-btn_login = Button(LoginFrame, font=('arial', 16),
-                   text="Войти", command=lambda: send_login_credentials(LOGINUSER, LOGINPASS, 0))
-
-btn_login.grid(row=6, columnspan=1)
+LoginPanel()
 
 
 if __name__ == '__main__':

@@ -34,6 +34,23 @@ def send(msg):
     conn.send(message)
 
 
+def databaseDataRequest():
+    Database()
+    database_data = []
+    cursor.execute('SELECT "user", pass, id, permission FROM public."user"')
+    rows = cursor.fetchall()
+    database_data.append(rows)
+    print(database_data)
+    print(type(database_data))
+    data = json.dumps(database_data)
+    sent_data = json.dumps(data)
+    conn.sendall(sent_data.encode(FORMAT))
+
+    con.commit()
+    cursor.close()
+    con.close()
+
+
 def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.")
 
@@ -54,7 +71,9 @@ def handle_client(conn, addr):
         elif(int(res["login_token"]) == 1):
             Register(res["login"], res["password"])
         elif(int(res["login_token"] == 2)):
-            RegisterAdmin(res["login"], res["password"])
+            RegisterAdmin(res["login"], res["password"], res["secret_key"])
+        elif(int(res["login_token"] == 3)):
+            databaseDataRequest()
 
         else:
             print("Error")
@@ -62,37 +81,44 @@ def handle_client(conn, addr):
     conn.close()
 
 
-def RegisterAdmin(msg_name, msg_password):
+def RegisterAdmin(msg_name, msg_password, msg_key):
     Database()
-    cursor.execute('SELECT "user", pass, id FROM public."user"')
-    rows = cursor.fetchall()
-    for row in rows:
-        print(row)
-        if msg_name == row[0]:
-            con.commit()
-            cursor.close()
-            con.close()
-            send("validation_error")
-            return
+    secret_key = "superuser"
+    if msg_key == secret_key:
+        cursor.execute(
+            'SELECT "user", pass, id, permission FROM public."user"')
+        rows = cursor.fetchall()
+        for row in rows:
+            print(row)
+            if msg_name == row[0]:
+                con.commit()
+                cursor.close()
+                con.close()
+                send("validation_error")
+                return
 
-    cursor.execute('SELECT * FROM public."user"')
-    cursor.execute('INSERT INTO public."user" ("user", pass) VALUES (%s, %s)',
-                   (msg_name, str(msg_password)))
-    con.commit()
-    print("Successfully Created!")
-    send("good_key")
-    cursor.close()
-    con.close()
+        cursor.execute('SELECT * FROM public."user"')
+        cursor.execute('INSERT INTO public."user" ("user", pass, permission) VALUES (%s, %s, 1)',
+                       (msg_name, str(msg_password)))
+        con.commit()
+        print("Successfully Created!")
+        send("good_key")
+        cursor.close()
+        con.close()
+    else:
+        send("bad_key")
 
 
 def Login(msg_name, msg_password):
     Database()
-    cursor.execute('SELECT "user", pass, id FROM public."user"')
+    cursor.execute('SELECT "user", pass, id, permission FROM public."user"')
     rows = cursor.fetchall()
     valid = False
+    permission = 0
     for row in rows:
         print(row)
         if msg_name == row[0] and msg_password == row[1]:
+            permission = row[3]
             print('he is right')
             valid = True
             con.commit()
@@ -103,12 +129,20 @@ def Login(msg_name, msg_password):
             print("hes not right")
             valid = False
 
-    if valid == True:
-        accessGranted = "access_granted"
-        send(accessGranted)
-    else:
-        accessGranted = "access_denied"
-        send(accessGranted)
+    if permission == 0:
+        if valid == True:
+            accessGranted = "access_granted"
+            send(accessGranted)
+        else:
+            accessGranted = "access_denied"
+            send(accessGranted)
+    elif permission == 1:
+        if valid == True:
+            accessGranted = "access_granted_admin"
+            send(accessGranted)
+        else:
+            accessGranted = "access_denied"
+            send(accessGranted)
 
 
 def Register(msg_login, msg_password):
@@ -125,7 +159,7 @@ def Register(msg_login, msg_password):
             return
 
     cursor.execute('SELECT * FROM public."user"')
-    cursor.execute('INSERT INTO public."user" ("user", pass) VALUES (%s, %s)',
+    cursor.execute('INSERT INTO public."user" ("user", pass, permission) VALUES (%s, %s, 0)',
                    (msg_login, str(msg_password)))
     con.commit()
     print("Successfully Created!")
