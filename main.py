@@ -119,8 +119,8 @@ def RegisterAdmin(msg_name, msg_password, msg_key):
                 return
 
         cursor.execute('SELECT * FROM public."user"')
-        cursor.execute('INSERT INTO public."user" ("user", pass, permission) VALUES (%s, %s, 1)',
-                       (msg_name, str(msg_password)))
+        cursor.execute(
+            f'INSERT INTO public."user" ("user", pass, permission) VALUES ({msg_name}, {str(msg_password)}, 1)')
         con.commit()
         print("Successfully Created!")
         send("good_key")
@@ -180,8 +180,8 @@ def Register(msg_login, msg_password):
             return
 
     cursor.execute('SELECT * FROM public."user"')
-    cursor.execute('INSERT INTO public."user" ("user", pass, permission) VALUES (%s, %s, 0)',
-                   (msg_login, str(msg_password)))
+    cursor.execute(
+        f'INSERT INTO public."user" ("user", pass, permission) VALUES ({msg_login}, {str(msg_password)}, 0)')
     con.commit()
     print("Successfully Created!")
     send("reg_success")

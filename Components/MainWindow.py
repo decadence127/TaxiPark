@@ -65,10 +65,6 @@ REGKEY = StringVar()
 DESERIALIZED_LIST = []
 
 
-def recieveDataHandler():
-    pass
-
-
 def SendQuery(login, password, token, secret_key):
     if login.get() == "" or login.get() == "":
         box.showerror("Ошибка", "Поля не должны быть пустыми ")
@@ -134,54 +130,8 @@ def RequestDataList():
     return tempList
 
 
-def AdminRegistrationWindow(button):
-    global registrationAdminWindow
-    registrationAdminWindow = Toplevel(master)
-    registrationAdminWindow.title("Registration Admin panel")
-    registrationAdminWindow.geometry("520x280")
-    registrationAdminWindow.resizable(False, False)
-    registrationAdminWindow.iconphoto(False, icon)
-    registrationAdminWindow.protocol(
-        "WM_DELETE_WINDOW", deleteAdminWindow)
-    lbl_username = Label(registrationAdminWindow, text="Введите логин:",
-                         font=('courier', 14), bd=14)
-    lbl_username.grid(row=1)
-
-    lbl_password = Label(registrationAdminWindow, text="Введите пароль:",
-                         font=('courier', 14), bd=14)
-    lbl_password.grid(row=2)
-
-    reg_user = Entry(registrationAdminWindow, font=('verdana', 16),
-                     textvariable=REGUSER, width=15)
-    reg_user.grid(row=1, column=1)
-
-    reg_pass = Entry(registrationAdminWindow, font=('verdana', 16),
-                     textvariable=REGPASS, width=15, show="*")
-    reg_pass.grid(row=2, column=1)
-    lbl_keyword = Label(registrationAdminWindow, text="Введите секретный ключ:",
-                        font=('courier', 14), bd=14)
-    lbl_keyword.grid(row=3)
-    reg_keyword = Entry(registrationAdminWindow, font=(
-        'verdana', 16), textvariable=REGKEY, width=15)
-    reg_keyword.grid(row=3, column=1)
-
-    btn_register = Button(registrationAdminWindow, font=('arial', 16),
-                          text="Зарегистрировать", command=lambda: SendQuery(REGUSER, REGPASS, 2, REGKEY))
-    btn_register.grid(row=6, columnspan=2)
-
-
-def deleteAdminWindow():
-    registrationAdminWindow.destroy()
-    reg_button["state"] = 'normal'
-
-
-def deleteWindow():
-    registrationWindow.destroy()
-    reg_button["state"] = 'normal'
-
-
 def LoginPanel():
-    global reg_button
+
     TitleFrame = Frame(master, height=100, width=640, bd=1, relief=SOLID)
     TitleFrame.pack(side=TOP)
     LoginFrame = Frame(master)
@@ -227,7 +177,7 @@ def RegistrationWindow(button):
     registrationWindow.iconphoto(False, icon)
     button["state"] = 'disabled'
     registrationWindow.protocol(
-        "WM_DELETE_WINDOW", deleteWindow)
+        "WM_DELETE_WINDOW", lambda: deleteWindow(button))
     lbl_checkbutton = Checkbutton(
         registrationWindow, text="Администратор", command=lambda: [AdminRegistrationWindow(button), registrationWindow.destroy()])
     lbl_checkbutton.grid(row=4)
@@ -254,6 +204,52 @@ def RegistrationWindow(button):
     btn_register.grid(row=6, columnspan=2)
 
 
+def AdminRegistrationWindow(button):
+    global registrationAdminWindow
+    registrationAdminWindow = Toplevel(master)
+    registrationAdminWindow.title("Registration Admin panel")
+    registrationAdminWindow.geometry("520x280")
+    registrationAdminWindow.resizable(False, False)
+    registrationAdminWindow.iconphoto(False, icon)
+    registrationAdminWindow.protocol(
+        "WM_DELETE_WINDOW", lambda: deleteAdminWindow(button))
+    lbl_username = Label(registrationAdminWindow, text="Введите логин:",
+                         font=('courier', 14), bd=14)
+    lbl_username.grid(row=1)
+
+    lbl_password = Label(registrationAdminWindow, text="Введите пароль:",
+                         font=('courier', 14), bd=14)
+    lbl_password.grid(row=2)
+
+    reg_user = Entry(registrationAdminWindow, font=('verdana', 16),
+                     textvariable=REGUSER, width=15)
+    reg_user.grid(row=1, column=1)
+
+    reg_pass = Entry(registrationAdminWindow, font=('verdana', 16),
+                     textvariable=REGPASS, width=15, show="*")
+    reg_pass.grid(row=2, column=1)
+    lbl_keyword = Label(registrationAdminWindow, text="Введите секретный ключ:",
+                        font=('courier', 14), bd=14)
+    lbl_keyword.grid(row=3)
+    reg_keyword = Entry(registrationAdminWindow, font=(
+        'verdana', 16), textvariable=REGKEY, width=15)
+    reg_keyword.grid(row=3, column=1)
+
+    btn_register = Button(registrationAdminWindow, font=('arial', 16),
+                          text="Зарегистрировать", command=lambda: SendQuery(REGUSER, REGPASS, 2, REGKEY))
+    btn_register.grid(row=6, columnspan=2)
+
+
+def deleteAdminWindow(button):
+    registrationAdminWindow.destroy()
+    button["state"] = 'normal'
+
+
+def deleteWindow(button):
+    registrationWindow.destroy()
+    button["state"] = 'normal'
+
+
 def AdministratorDashboard():
     adminDashboardTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
@@ -269,11 +265,8 @@ def AdministratorDashboard():
     btn_logout = Button(adminDashboardFrame, text="Выйти", font=(
         'Arial', 14), command=lambda: [adminDashboardFrame.destroy(), adminDashboardTitleFrame.destroy(), LoginPanel()])
     btn_logout.grid(row=5, columnspan=2, padx=520)
-    btn_adduser = Button(adminDashboardFrame, text="Добавить пользователя", font=(
-        'Arial', 14), command=lambda: RegistrationWindow(btn_adduser))
-    btn_adduser.grid(row=1, column=0, sticky=W, padx=80, pady=10)
-    btn_deleteuser = Button(adminDashboardFrame, text="Удалить пользователя", font=(
-        'Arial', 14), command=lambda: [DeletionWindow(), adminDashboardTitleFrame.destroy(), adminDashboardFrame.destroy()])
+    btn_deleteuser = Button(adminDashboardFrame, text="Пользователи", font=(
+        'Arial', 14), command=lambda: [UsersHandlerWindow(), adminDashboardTitleFrame.destroy(), adminDashboardFrame.destroy()])
     btn_deleteuser.grid(row=2, column=0, sticky=W, padx=80, pady=10)
 
 
@@ -290,35 +283,38 @@ def DashBoardWindow():
     lbl_title.pack()
 
 
-def DeletionWindow():
+def UsersHandlerWindow():
     tempList = []
     tempList = RequestDataList()
     sortedList = sorted(tempList, key=lambda x: x[2])
-    deletionTitleFrame = Frame(
+    handlerTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
-    deletionTitleFrame.pack(side=TOP)
-    lbl_title = Label(deletionTitleFrame, text="Меню удаления пользователя", font=(
+    handlerTitleFrame.pack(side=TOP)
+    lbl_title = Label(handlerTitleFrame, text="Меню пользователей", font=(
         'courier', 14), bd=1, width=640)
     lbl_title.pack()
 
-    deletionWindow = Frame(master)
-    deletionWindow.pack(side=TOP)
-    text = Listbox(deletionWindow, width=640, bd=1, relief=SOLID)
+    userHandlerWindow = Frame(master)
+    userHandlerWindow.pack(side=TOP)
+    text = Listbox(userHandlerWindow, width=640, bd=1, relief=SOLID)
     for i in sortedList:
         textPermission = "Администратор" if i[3] == 1 else "Пользователь"
         text.insert(
             END, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission)
     text.pack(side=TOP, pady=20)
 
-    del_btn = Button(deletionWindow, text="Удалить",
+    del_btn = Button(userHandlerWindow, text="Удалить",
                      font=('Arial', 14), command=lambda: DeleteSelectedObject(text, sortedList))
     del_btn.pack(side=LEFT, pady=10, padx=20)
-    return_btn = Button(deletionWindow, text="Вернуться",
-                        font=('Arial', 14), command=lambda: [deletionWindow.destroy(), deletionTitleFrame.destroy(), AdministratorDashboard()])
+    return_btn = Button(userHandlerWindow, text="Вернуться",
+                        font=('Arial', 14), command=lambda: [userHandlerWindow.destroy(), handlerTitleFrame.destroy(), AdministratorDashboard()])
     return_btn.pack(side=LEFT, pady=10, padx=20)
-    refresh_btn = Button(deletionWindow, text="Обновить",
-                         font=('Arial', 14), command=lambda: [deletionWindow.destroy(), deletionTitleFrame.destroy(), DeletionWindow()])
+    refresh_btn = Button(userHandlerWindow, text="Обновить",
+                         font=('Arial', 14), command=lambda: [userHandlerWindow.destroy(), handlerTitleFrame.destroy(), UsersHandlerWindow()])
     refresh_btn.pack(side=LEFT, pady=10, padx=20)
+    adduser_btn = Button(userHandlerWindow, text="Добавить", font=(
+        'Arial', 14), command=lambda: RegistrationWindow(adduser_btn))
+    adduser_btn.pack(side=LEFT, pady=10, padx=20)
 
 
 def DeleteSelectedObject(text, tempList):
