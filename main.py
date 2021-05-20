@@ -34,6 +34,24 @@ def send(msg):
     conn.send(message)
 
 
+def deletionQuery(msg_name):
+    Database()
+    print(str(msg_name))
+    try:
+        cursor.execute(
+            f"DELETE FROM public.\"user\" WHERE \"user\" = '{msg_name}'")
+        con.commit()
+        cursor.close()
+        con.close()
+        send("successfully_deleted")
+    except (Exception, psycopg2.DatabaseError) as e:
+        send("failed_deletion")
+        print(e)
+    finally:
+        if con is not None:
+            con.close()
+
+
 def databaseDataRequest():
     Database()
     database_data = []
@@ -66,14 +84,17 @@ def handle_client(conn, addr):
         print("obj:", deserialized)
         res = json.loads(deserialized)
 
-        if(int(res["login_token"]) == 0):
+        if(int(res["query_token"]) == 0):
             Login(res["login"], res["password"])
-        elif(int(res["login_token"]) == 1):
+        elif(int(res["query_token"]) == 1):
             Register(res["login"], res["password"])
-        elif(int(res["login_token"] == 2)):
+        elif(int(res["query_token"] == 2)):
             RegisterAdmin(res["login"], res["password"], res["secret_key"])
-        elif(int(res["login_token"] == 3)):
+        elif(int(res["query_token"] == 3)):
             databaseDataRequest()
+        elif(int(res["query_token"] == 4)):
+            print(deserialized)
+            deletionQuery(res["login"])
 
         else:
             print("Error")

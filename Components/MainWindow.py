@@ -1,10 +1,9 @@
-
 from json import encoder
 import socket
 from tkinter import *
 import tkinter.messagebox as box
 import json
-
+import re
 
 HEADER = 64
 PORT = 5050
@@ -17,24 +16,24 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
 
 
-class LoginModel:
+class QueryModel:
     login = ""
     password = ""
-    login_token = 0
+    query_token = 0
     secret_key = ""
 
     def __init__(self) -> None:
         pass
 
-    def __init__(self, login, password, login_token):
+    def __init__(self, login, password, query_token):
         self.login = login
         self.password = password
-        self.login_token = login_token
+        self.query_token = query_token
 
-    def __init__(self, login, password, login_token, secret_key):
+    def __init__(self, login, password, query_token, secret_key):
         self.login = login
         self.password = password
-        self.login_token = login_token
+        self.query_token = query_token
         self.secret_key = secret_key
 
     def toJSON(self):
@@ -70,7 +69,7 @@ def recieveDataHandler():
     pass
 
 
-def send_login_credentials(login, password, token, secret_key):
+def SendQuery(login, password, token, secret_key):
     if login.get() == "" or login.get() == "":
         box.showerror("Ошибка", "Поля не должны быть пустыми ")
         return
@@ -78,7 +77,7 @@ def send_login_credentials(login, password, token, secret_key):
         tempLogin = login.get()
         tempPass = password.get()
         tempKey = secret_key.get()
-        loginData = LoginModel(tempLogin, tempPass, token, tempKey)
+        loginData = QueryModel(tempLogin, tempPass, token, tempKey)
         JsonObject = loginData.toJSON()
         serialized = json.dumps(JsonObject)
         client.sendall(serialized.encode(FORMAT))
@@ -119,7 +118,7 @@ def send_login_credentials(login, password, token, secret_key):
 
 def RequestDataList():
     tempList = []
-    emptyRequest = LoginModel("", "", 3, "")
+    emptyRequest = QueryModel("", "", 3, "")
     JsonRequest = emptyRequest.toJSON()
     serializedRequest = json.dumps(JsonRequest)
     client.sendall(serializedRequest.encode(FORMAT))
@@ -167,7 +166,7 @@ def AdminRegistrationWindow(button):
     reg_keyword.grid(row=3, column=1)
 
     btn_register = Button(registrationAdminWindow, font=('arial', 16),
-                          text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 2, REGKEY))
+                          text="Зарегистрировать", command=lambda: SendQuery(REGUSER, REGPASS, 2, REGKEY))
     btn_register.grid(row=6, columnspan=2)
 
 
@@ -214,7 +213,7 @@ def LoginPanel():
     reg_button.grid(row=6, columnspan=3, padx=180)
 
     btn_login = Button(LoginFrame, font=('arial', 16),
-                       text="Войти", command=lambda: [send_login_credentials(LOGINUSER, LOGINPASS, 0, REGKEY), LoginFrame.destroy(), TitleFrame.destroy()])
+                       text="Войти", command=lambda: [SendQuery(LOGINUSER, LOGINPASS, 0, REGKEY), LoginFrame.destroy(), TitleFrame.destroy()])
 
     btn_login.grid(row=6, columnspan=1)
 
@@ -251,7 +250,7 @@ def RegistrationWindow(button):
     reg_pass.grid(row=2, column=1)
 
     btn_register = Button(registrationWindow, font=('arial', 16),
-                          text="Зарегистрировать", command=lambda: send_login_credentials(REGUSER, REGPASS, 1, REGKEY))
+                          text="Зарегистрировать", command=lambda: SendQuery(REGUSER, REGPASS, 1, REGKEY))
     btn_register.grid(row=6, columnspan=2)
 
 
@@ -269,13 +268,13 @@ def AdministratorDashboard():
 
     btn_logout = Button(adminDashboardFrame, text="Выйти", font=(
         'Arial', 14), command=lambda: [adminDashboardFrame.destroy(), adminDashboardTitleFrame.destroy(), LoginPanel()])
-    btn_logout.grid(row=1, columnspan=2, padx=520)
+    btn_logout.grid(row=5, columnspan=2, padx=520)
     btn_adduser = Button(adminDashboardFrame, text="Добавить пользователя", font=(
         'Arial', 14), command=lambda: RegistrationWindow(btn_adduser))
-    btn_adduser.grid(row=2, column=0, sticky=W, padx=80, pady=10)
+    btn_adduser.grid(row=1, column=0, sticky=W, padx=80, pady=10)
     btn_deleteuser = Button(adminDashboardFrame, text="Удалить пользователя", font=(
         'Arial', 14), command=lambda: [DeletionWindow(), adminDashboardTitleFrame.destroy(), adminDashboardFrame.destroy()])
-    btn_deleteuser.grid(row=3, column=0, sticky=W, padx=80, pady=10)
+    btn_deleteuser.grid(row=2, column=0, sticky=W, padx=80, pady=10)
 
 
 def DashBoardWindow():
@@ -294,6 +293,7 @@ def DashBoardWindow():
 def DeletionWindow():
     tempList = []
     tempList = RequestDataList()
+    sortedList = sorted(tempList, key=lambda x: x[2])
     deletionTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
     deletionTitleFrame.pack(side=TOP)
@@ -304,13 +304,53 @@ def DeletionWindow():
     deletionWindow = Frame(master)
     deletionWindow.pack(side=TOP)
     text = Listbox(deletionWindow, width=640, bd=1, relief=SOLID)
-    for i in tempList:
+    for i in sortedList:
         textPermission = "Администратор" if i[3] == 1 else "Пользователь"
         text.insert(
-            0, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission)
+            END, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission)
     text.pack(side=TOP, pady=20)
-    del_btn = Button(deletionWindow, text="Удалить", font=('Arial', 14))
+
+    del_btn = Button(deletionWindow, text="Удалить",
+                     font=('Arial', 14), command=lambda: DeleteSelectedObject(text, sortedList))
     del_btn.pack(side=LEFT, pady=10, padx=20)
+    return_btn = Button(deletionWindow, text="Вернуться",
+                        font=('Arial', 14), command=lambda: [deletionWindow.destroy(), deletionTitleFrame.destroy(), AdministratorDashboard()])
+    return_btn.pack(side=LEFT, pady=10, padx=20)
+    refresh_btn = Button(deletionWindow, text="Обновить",
+                         font=('Arial', 14), command=lambda: [deletionWindow.destroy(), deletionTitleFrame.destroy(), DeletionWindow()])
+    refresh_btn.pack(side=LEFT, pady=10, padx=20)
+
+
+def DeleteSelectedObject(text, tempList):
+    tempStr = ""
+    sortedList = sorted(tempList, key=lambda x: x[2])
+    print(sortedList)
+    for i in text.curselection():
+        tempStr = text.get(i)
+        print(tempStr)
+        regex_id = re.search('(?<=: )\w+', tempStr)
+        id = int(regex_id.group(0))
+        for list_index, i in enumerate(sortedList):
+            if id == i[2]:
+                delObjectData = QueryModel(
+                    sortedList[list_index][0], sortedList[list_index][1], 4, "")
+                JsonObject = delObjectData.toJSON()
+                serialized = json.dumps(JsonObject)
+                client.sendall(serialized.encode(FORMAT))
+                del_answer_length = client.recv(HEADER).decode(FORMAT)
+                del_answer = client.recv(int(del_answer_length))
+                del_answer = del_answer.decode(FORMAT)
+                if str(del_answer == "successfully_deleted"):
+                    box.showinfo("Успех!", "Вы успешно удалили пользователя!")
+                    text.delete(i)
+                elif str(del_answer == "failed_deletion"):
+                    box.showerror(
+                        "Ошибка!", "Не удалось удалить пользователя!")
+                else:
+                    box.showerror("Ошибка!", "Неизвестная ошибка!")
+        else:
+            box.showerror(
+                "Ошибка!", "Не удалось отправить данные на сервер!")
 
 
 def send(msg):
