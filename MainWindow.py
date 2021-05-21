@@ -1,9 +1,9 @@
-from json import encoder
 import socket
 from tkinter import *
 import tkinter.messagebox as box
 import json
 import re
+from Components import classes
 
 HEADER = 64
 PORT = 5050
@@ -51,7 +51,7 @@ x = (screen_width/2) - (width/2)
 y = (screen_height/2) - (height/2)
 master.geometry("%dx%d+%d+%d" % (width, height, x, y))
 master.resizable(0, 0)
-icon = PhotoImage(file='icon.ico')
+icon = PhotoImage(file='Components/icon.ico')
 master.iconphoto(False, icon)
 
 LOGINUSER = StringVar()
@@ -61,8 +61,6 @@ REGUSER = StringVar()
 REGPASS = StringVar()
 
 REGKEY = StringVar()
-
-DESERIALIZED_LIST = []
 
 
 def SendQuery(login, password, token, secret_key):
@@ -112,21 +110,37 @@ def SendQuery(login, password, token, secret_key):
                 box.showerror("Ошибка", "Такой пользователь уже существует")
 
 
-def RequestDataList():
-    tempList = []
-    emptyRequest = QueryModel("", "", 3, "")
-    JsonRequest = emptyRequest.toJSON()
-    serializedRequest = json.dumps(JsonRequest)
-    client.sendall(serializedRequest.encode(FORMAT))
-    del_answer = client.recv(1024)
-    del_answer = del_answer.decode(FORMAT)
-    try:
-        deserialized_list = json.loads(del_answer)
-    except (TypeError, ValueError) as e:
-        raise Exception('Data received was not in JSON format')
-    res = json.loads(deserialized_list)
-    print(type(res))
-    tempList = res[0]
+def RequestDataList(token):
+    if token == 0:
+        tempList = []
+        emptyRequest = QueryModel("", "", 3, "")
+        JsonRequest = emptyRequest.toJSON()
+        serializedRequest = json.dumps(JsonRequest)
+        client.sendall(serializedRequest.encode(FORMAT))
+        del_answer = client.recv(1024)
+        del_answer = del_answer.decode(FORMAT)
+        try:
+            deserialized_list = json.loads(del_answer)
+        except (TypeError, ValueError) as e:
+            raise Exception('Data received was not in JSON format')
+        res = json.loads(deserialized_list)
+        print(type(res))
+        tempList = res[0]
+    elif token == 1:
+        tempList = []
+        emptyRequest = QueryModel("", "", 5, "")
+        JsonRequest = emptyRequest.toJSON()
+        serializedRequest = json.dumps(JsonRequest)
+        client.sendall(serializedRequest.encode(FORMAT))
+        del_answer = client.recv(1024)
+        del_answer = del_answer.decode(FORMAT)
+        try:
+            deserialized_list = json.loads(del_answer)
+        except (TypeError, ValueError) as e:
+            raise Exception('Data received was not in JSON format')
+        res = json.loads(deserialized_list)
+        print(type(res))
+        tempList = res[0]
     return tempList
 
 
@@ -265,9 +279,48 @@ def AdministratorDashboard():
     btn_logout = Button(adminDashboardFrame, text="Выйти", font=(
         'Arial', 14), command=lambda: [adminDashboardFrame.destroy(), adminDashboardTitleFrame.destroy(), LoginPanel()])
     btn_logout.grid(row=5, columnspan=2, padx=520)
-    btn_deleteuser = Button(adminDashboardFrame, text="Пользователи", font=(
+    btn_usershandler = Button(adminDashboardFrame, text="Пользователи", font=(
         'Arial', 14), command=lambda: [UsersHandlerWindow(), adminDashboardTitleFrame.destroy(), adminDashboardFrame.destroy()])
-    btn_deleteuser.grid(row=2, column=0, sticky=W, padx=80, pady=10)
+    btn_usershandler.grid(row=2, column=0, sticky=W, padx=80, pady=10)
+    btn_cars = Button(adminDashboardFrame, text="Автомобили", font=('Arial', 14), command=lambda: [
+                      adminDashboardFrame.destroy(), adminDashboardTitleFrame.destroy(), CarsHandlerWindow()])
+    btn_cars.grid(row=3, column=0, sticky=W, padx=80, pady=10)
+
+
+def CarsHandlerWindow():
+    tempList = []
+    # tempList = RequestDataList(1)
+    a = classes.TaxiModel("Kia", 0)
+    a.addDriver("Alex", "Ivanov", "Ivanovich", 40, 1)
+    a.addDriver("Alex", "German", "Sergeevich", 32, 2)
+    tempList.append(a.get_taxi())
+    print(tempList)
+    # sortedList = sorted(tempList, key=lambda x: x[2])
+    handlerTitleFrame = Frame(
+        master, height=100, width=640, bd=1, relief=SOLID)
+    handlerTitleFrame.pack(side=TOP)
+    lbl_title = Label(handlerTitleFrame, text="Меню автомобилей", font=(
+        'courier', 14), bd=1, width=640)
+    lbl_title.pack()
+
+    carHandlerWindow = Frame(master)
+    carHandlerWindow.pack(side=TOP)
+    text = Listbox(carHandlerWindow, width=640, bd=1, relief=SOLID)
+    for i in tempList:
+        text.insert(END, i)
+    text.pack(side=TOP, pady=20)
+    del_btn = Button(carHandlerWindow, text="Удалить",
+                     font=('Arial', 14), command=lambda: DeleteSelectedObject(text, tempList))
+    del_btn.pack(side=LEFT, pady=10, padx=20)
+    return_btn = Button(carHandlerWindow, text="Вернуться",
+                        font=('Arial', 14), command=lambda: [carHandlerWindow.destroy(), handlerTitleFrame.destroy(), AdministratorDashboard()])
+    return_btn.pack(side=LEFT, pady=10, padx=20)
+    refresh_btn = Button(carHandlerWindow, text="Обновить",
+                         font=('Arial', 14), command=lambda: [carHandlerWindow.destroy(), handlerTitleFrame.destroy(), CarsHandlerWindow()])
+    refresh_btn.pack(side=LEFT, pady=10, padx=20)
+    adduser_btn = Button(carHandlerWindow, text="Добавить", font=(
+        'Arial', 14), command=lambda: RegistrationWindow(adduser_btn))
+    adduser_btn.pack(side=LEFT, pady=10, padx=20)
 
 
 def DashBoardWindow():
@@ -285,7 +338,7 @@ def DashBoardWindow():
 
 def UsersHandlerWindow():
     tempList = []
-    tempList = RequestDataList()
+    tempList = RequestDataList(0)
     sortedList = sorted(tempList, key=lambda x: x[2])
     handlerTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)

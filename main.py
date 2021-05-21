@@ -3,6 +3,7 @@ import psycopg2
 import socket
 import threading
 
+
 HEADER = 64
 FORMAT = 'utf-8'
 PORT = 5050
@@ -52,21 +53,39 @@ def deletionQuery(msg_name):
             con.close()
 
 
-def databaseDataRequest():
-    Database()
-    database_data = []
-    cursor.execute('SELECT "user", pass, id, permission FROM public."user"')
-    rows = cursor.fetchall()
-    database_data.append(rows)
-    print(database_data)
-    print(type(database_data))
-    data = json.dumps(database_data)
-    sent_data = json.dumps(data)
-    conn.sendall(sent_data.encode(FORMAT))
+def databaseDataRequest(token):
+    if token == 0:
+        Database()
+        database_data = []
+        cursor.execute(
+            'SELECT "user", pass, id, permission FROM public."user"')
+        rows = cursor.fetchall()
+        database_data.append(rows)
+        print(database_data)
+        print(type(database_data))
+        data = json.dumps(database_data)
+        sent_data = json.dumps(data)
+        conn.sendall(sent_data.encode(FORMAT))
 
-    con.commit()
-    cursor.close()
-    con.close()
+        con.commit()
+        cursor.close()
+        con.close()
+    if token == 1:
+        Database()
+        database_data = []
+        cursor.execute(
+            'SELECT "user", pass, id, permission FROM public."user"')
+        rows = cursor.fetchall()
+        database_data.append(rows)
+        print(database_data)
+        print(type(database_data))
+        data = json.dumps(database_data)
+        sent_data = json.dumps(data)
+        conn.sendall(sent_data.encode(FORMAT))
+
+        con.commit()
+        cursor.close()
+        con.close()
 
 
 def handle_client(conn, addr):
@@ -91,10 +110,12 @@ def handle_client(conn, addr):
         elif(int(res["query_token"] == 2)):
             RegisterAdmin(res["login"], res["password"], res["secret_key"])
         elif(int(res["query_token"] == 3)):
-            databaseDataRequest()
+            databaseDataRequest(0)
         elif(int(res["query_token"] == 4)):
             print(deserialized)
             deletionQuery(res["login"])
+        elif(int(res["query_token"] == 5)):
+            databaseDataRequest(1)
 
         else:
             print("Error")
