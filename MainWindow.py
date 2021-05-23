@@ -16,31 +16,6 @@ client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(ADDR)
 
 
-class QueryModel:
-    login = ""
-    password = ""
-    query_token = 0
-    secret_key = ""
-
-    def __init__(self) -> None:
-        pass
-
-    def __init__(self, login, password, query_token):
-        self.login = login
-        self.password = password
-        self.query_token = query_token
-
-    def __init__(self, login, password, query_token, secret_key):
-        self.login = login
-        self.password = password
-        self.query_token = query_token
-        self.secret_key = secret_key
-
-    def toJSON(self):
-        return json.dumps(self, default=lambda o: o.__dict__,
-                          sort_keys=True, indent=4)
-
-
 master = Tk()
 master.title("Taxipark")
 width = 640
@@ -62,6 +37,37 @@ REGPASS = StringVar()
 
 REGKEY = StringVar()
 
+CARMODEL = StringVar()
+DRIVERNAME = StringVar()
+DRIVERSURNAME = StringVar()
+DRIVERMIDDLENAME = StringVar()
+DRIVERAGE = StringVar()
+
+BALANCE = StringVar()
+CURBALANCE = 0.0
+
+
+def SendCarQuery(token, carmodel, drivername, driversurname, drivermiddlename, driverage):
+    tempCarmodel = carmodel.get()
+    tempDrivername = drivername.get()
+    tempDriverSurname = driversurname.get()
+    tempDriverMiddleName = drivermiddlename.get()
+    tempDriverAge = driverage.get()
+    carObject = classes.TaxiModel(
+        tempCarmodel, 6, tempDrivername, tempDriverSurname, tempDriverMiddleName, tempDriverAge)
+    JsonObject = carObject.toJSON()
+    serialized = json.dumps(JsonObject)
+    client.sendall(serialized.encode(FORMAT))
+    if token == 0:
+        answer_length = client.recv(HEADER).decode(FORMAT)
+        answer = client.recv(int(answer_length))
+        answer = answer.decode(FORMAT)
+        if str(answer) == "car_added":
+            box.showinfo("Успех!", "Автомобиль был успешно добавлен")
+        elif str(answer) == "car_not_added":
+            box.showerror("Ошибка!",
+                          "Автомобиль не удалось добавить")
+
 
 def SendQuery(login, password, token, secret_key):
     if login.get() == "" or login.get() == "":
@@ -71,21 +77,24 @@ def SendQuery(login, password, token, secret_key):
         tempLogin = login.get()
         tempPass = password.get()
         tempKey = secret_key.get()
-        loginData = QueryModel(tempLogin, tempPass, token, tempKey)
+        loginData = classes.QueryModel(tempLogin, tempPass, tempKey, token)
         JsonObject = loginData.toJSON()
         serialized = json.dumps(JsonObject)
         client.sendall(serialized.encode(FORMAT))
         if token == 0:
-            answer_length = client.recv(HEADER).decode(FORMAT)
-            answer = client.recv(int(answer_length))
-            answer = answer.decode(FORMAT)
-            if str(answer) == "access_granted":
-                DashBoardWindow()
-            elif str(answer) == "access_denied":
+            received_answer = client.recv(1024).decode(FORMAT)
+            deserialized = json.loads(received_answer)
+            res = json.loads(deserialized)
+            if str(res["answer_message"]) == "access_granted":
+                balance = 0.0
+                balance = res["balance"]
+                CURBALANCE = res["balance"]
+                DashBoardWindow(balance)
+            elif str(res["answer_message"]) == "access_denied":
                 box.showerror("Данные были введены неверно",
                               "Попробуйте снова или зарегистрируйтесь")
                 LoginPanel()
-            elif str(answer) == "access_granted_admin":
+            elif str(res["answer_message"]) == "access_granted_admin":
                 AdministratorDashboard()
         elif token == 1:
             reg_answer_length = client.recv(HEADER).decode(FORMAT)
@@ -113,7 +122,7 @@ def SendQuery(login, password, token, secret_key):
 def RequestDataList(token):
     if token == 0:
         tempList = []
-        emptyRequest = QueryModel("", "", 3, "")
+        emptyRequest = classes.QueryModel("", "", "", 3)
         JsonRequest = emptyRequest.toJSON()
         serializedRequest = json.dumps(JsonRequest)
         client.sendall(serializedRequest.encode(FORMAT))
@@ -128,7 +137,7 @@ def RequestDataList(token):
         tempList = res[0]
     elif token == 1:
         tempList = []
-        emptyRequest = QueryModel("", "", 5, "")
+        emptyRequest = classes.QueryModel("", "", "", 5)
         JsonRequest = emptyRequest.toJSON()
         serializedRequest = json.dumps(JsonRequest)
         client.sendall(serializedRequest.encode(FORMAT))
@@ -173,7 +182,7 @@ def LoginPanel():
     pass1.grid(row=2, column=1)
 
     reg_button = Button(LoginFrame, font=('arial', 16),
-                        text="Зарегистрироваться", command=lambda: RegistrationWindow(reg_button))
+                        text="Зарегистрироваться", command=lambda: [RegistrationWindow(reg_button), LOGINUSER.set(""), LOGINPASS.set(""), REGPASS.set(""), REGKEY.set("")])
     reg_button.grid(row=6, columnspan=3, padx=180)
 
     btn_login = Button(LoginFrame, font=('arial', 16),
@@ -193,7 +202,7 @@ def RegistrationWindow(button):
     registrationWindow.protocol(
         "WM_DELETE_WINDOW", lambda: deleteWindow(button))
     lbl_checkbutton = Checkbutton(
-        registrationWindow, text="Администратор", command=lambda: [AdminRegistrationWindow(button), registrationWindow.destroy()])
+        registrationWindow, text="Администратор", command=lambda: [AdminRegistrationWindow(button), registrationWindow.destroy(), REGPASS.set(""), REGUSER.set("")])
     lbl_checkbutton.grid(row=4)
 
     lbl_username = Label(registrationWindow, text="Введите логин:",
@@ -264,6 +273,19 @@ def deleteWindow(button):
     button["state"] = 'normal'
 
 
+def deleteBalanceFrame(button):
+    balanceFrame.destroy()
+    dashboardTitleFrame.destroy()
+    dashboardFrame.destroy()
+    DashBoardWindow(CURBALANCE)
+    button["state"] = 'normal'
+
+
+def deleteCarWindow(button):
+    carAddingWindow.destroy()
+    button["state"] = 'normal'
+
+
 def AdministratorDashboard():
     adminDashboardTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
@@ -288,14 +310,11 @@ def AdministratorDashboard():
 
 
 def CarsHandlerWindow():
-    tempList = []
-    # tempList = RequestDataList(1)
-    a = classes.TaxiModel("Kia", 0)
-    a.addDriver("Alex", "Ivanov", "Ivanovich", 40, 1)
-    a.addDriver("Alex", "German", "Sergeevich", 32, 2)
-    tempList.append(a.get_taxi())
-    print(tempList)
-    # sortedList = sorted(tempList, key=lambda x: x[2])
+    tempCarList = []
+    tempCarList = RequestDataList(1)
+    sortedList = sorted(tempCarList, key=lambda x: x[0])
+    print(sortedList)
+    print(sortedList[0][0])
     handlerTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
     handlerTitleFrame.pack(side=TOP)
@@ -306,11 +325,12 @@ def CarsHandlerWindow():
     carHandlerWindow = Frame(master)
     carHandlerWindow.pack(side=TOP)
     text = Listbox(carHandlerWindow, width=640, bd=1, relief=SOLID)
-    for i in tempList:
-        text.insert(END, i)
+    for i in sortedList:
+        text.insert(END, "id: " + str(i[0]) + ". Модель авто: " +
+                    str(i[1]) + " ФИО Водителя: " + str(i[3]) + " " + str(i[2]) + " " + str(i[4]))
     text.pack(side=TOP, pady=20)
     del_btn = Button(carHandlerWindow, text="Удалить",
-                     font=('Arial', 14), command=lambda: DeleteSelectedObject(text, tempList))
+                     font=('Arial', 14), command=lambda: DeleteSelectedObject(text, tempCarList, 1))
     del_btn.pack(side=LEFT, pady=10, padx=20)
     return_btn = Button(carHandlerWindow, text="Вернуться",
                         font=('Arial', 14), command=lambda: [carHandlerWindow.destroy(), handlerTitleFrame.destroy(), AdministratorDashboard()])
@@ -319,11 +339,85 @@ def CarsHandlerWindow():
                          font=('Arial', 14), command=lambda: [carHandlerWindow.destroy(), handlerTitleFrame.destroy(), CarsHandlerWindow()])
     refresh_btn.pack(side=LEFT, pady=10, padx=20)
     adduser_btn = Button(carHandlerWindow, text="Добавить", font=(
-        'Arial', 14), command=lambda: RegistrationWindow(adduser_btn))
+        'Arial', 14), command=lambda: CarAdditionWindow(adduser_btn))
     adduser_btn.pack(side=LEFT, pady=10, padx=20)
 
 
-def DashBoardWindow():
+def CarAdditionWindow(button):
+    global carAddingWindow
+    carAddingWindow = Toplevel(master)
+    carAddingWindow.title("Добавить машину")
+    carAddingWindow.geometry("640x520")
+    carAddingWindow.resizable(False, False)
+    carAddingWindow.iconphoto(False, icon)
+    button["state"] = 'disabled'
+    carAddingWindow.protocol(
+        "WM_DELETE_WINDOW", lambda: deleteCarWindow(button))
+
+    lbl_carmodel = Label(carAddingWindow, text="Введите марку авто:",
+                         font=('courier', 14), bd=14)
+    lbl_carmodel.grid(row=1)
+
+    lbl_driverName = Label(carAddingWindow, text="Введите имя водителя:",
+                           font=('courier', 14), bd=14)
+
+    lbl_driverName.grid(row=2)
+
+    lbl_driverSurname = Label(carAddingWindow, text="Введите фамилию водителя:",
+                              font=('courier', 14), bd=14)
+
+    lbl_driverSurname.grid(row=3)
+
+    lbl_driverMidName = Label(carAddingWindow, text="Введите отчество водителя:",
+                              font=('courier', 14), bd=14)
+
+    lbl_driverMidName.grid(row=4)
+
+    lbl_driverAge = Label(carAddingWindow, text="Введите возраст водителя:",
+                          font=('courier', 14), bd=14)
+
+    lbl_driverAge.grid(row=5)
+
+    carmodel_entr = Entry(carAddingWindow, font=('verdana', 16),
+                          textvariable=CARMODEL, width=15)
+    carmodel_entr.grid(row=1, column=1)
+
+    driverName_entr = Entry(carAddingWindow, font=('verdana', 16),
+                            textvariable=DRIVERNAME, width=15)
+    driverName_entr.grid(row=2, column=1)
+
+    driverSurname_entr = Entry(carAddingWindow, font=('verdana', 16),
+                               textvariable=DRIVERSURNAME, width=15)
+    driverSurname_entr.grid(row=3, column=1)
+
+    driverMidName_entr = Entry(carAddingWindow, font=('verdana', 16),
+                               textvariable=DRIVERMIDDLENAME, width=15)
+    driverMidName_entr.grid(row=4, column=1)
+
+    driverAge_entr = Entry(carAddingWindow, font=('verdana', 16),
+                           textvariable=DRIVERAGE, width=15)
+    driverAge_entr.grid(row=5, column=1)
+
+    btn_addition = Button(carAddingWindow, font=('arial', 16),
+                          text="Добавить", command=lambda: NumberValidation())
+    btn_addition.grid(row=6, columnspan=2)
+
+
+def NumberValidation():
+    Item1 = DRIVERAGE.get()
+    if Item1.isdigit():
+        SendCarQuery(0, CARMODEL, DRIVERNAME, DRIVERSURNAME,
+                     DRIVERMIDDLENAME, DRIVERAGE)
+        return True
+    else:
+        box.showerror(
+            "Ошибка!", "Вы можете ввести только число в поле возраст")
+        DRIVERAGE.set("")
+        return False
+
+
+def DashBoardWindow(balance):
+    global dashboardFrame, dashboardTitleFrame
     dashboardTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
     dashboardTitleFrame.pack(side=TOP)
@@ -334,6 +428,68 @@ def DashBoardWindow():
     lbl_title = Label(dashboardTitleFrame, text=f"Добро пожаловать, {LOGINUSER.get()}!",
                       font=('courier', 14), bd=1, width=640)
     lbl_title.pack()
+
+    lbl_balance = Label(dashboardTitleFrame,
+                        text=f"Ваш баланс, {balance} руб.", font=('courier', 14), bd=1)
+    lbl_balance.pack()
+    btn_add_balance = Button(dashboardFrame, text="Пополнить баланс", font=(
+        'Arial', 14), command=lambda: [BalanceAddition(btn_add_balance)])
+    btn_add_balance.pack(side=LEFT, pady=10, padx=20)
+    refresh_balance_btn = Button(dashboardFrame, text="Обновить",
+                                 font=('Arial', 14), command=lambda: [dashboardTitleFrame.destroy(), dashboardFrame.destroy(), DashBoardWindow(CURBALANCE)])
+    refresh_balance_btn.pack(side=LEFT, pady=10, padx=20)
+
+
+def BalanceAddition(button):
+    global balanceFrame
+    button["state"] = 'disabled'
+    balanceFrame = Toplevel(master)
+    balanceFrame.title("Пополнение баланса")
+    balanceFrame.geometry("520x280")
+    balanceFrame.resizable(False, False)
+    balanceFrame.iconphoto(False, icon)
+    balanceFrame.protocol(
+        "WM_DELETE_WINDOW", lambda: deleteBalanceFrame(button))
+
+    lbl_balance = Label(balanceFrame, text="Баланс: ", font=('Arial', 14))
+    lbl_balance.grid(row=2)
+
+    entr_balance = Entry(balanceFrame, font=(
+        'verdana', 14), textvariable=BALANCE, width=15)
+    entr_balance.grid(row=2, column=1)
+    btn_balance = Button(balanceFrame, text="Пополнить", font=('Arial', 14),
+                         command=lambda: [SendBalanceQuery(BALANCE)])
+    btn_balance.grid(row=3, column=1, pady=20, padx=20)
+    return_btn = Button(balanceFrame, text="Вернуться",
+                        font=('Arial', 14), command=lambda: [balanceFrame.destroy(), balanceFrame.destroy()])
+    return_btn.grid(row=3, column=2, pady=20, padx=20)
+
+
+def SendBalanceQuery(balance):
+    if balance.get() == "":
+        box.showerror("Ошибка", "Поля не должны быть пустыми ")
+        return
+    else:
+        tempBalance = balance.get()
+        login = LOGINUSER.get()
+        tempBalanceData = classes.QueryModel(
+            login, "", "", 8,  float(tempBalance))
+
+        JsonObject = tempBalanceData.toJSON()
+        serialized = json.dumps(JsonObject)
+        client.sendall(serialized.encode(FORMAT))
+
+        received_answer = client.recv(1024).decode(FORMAT)
+        print(received_answer)
+        deserialized = json.loads(received_answer)
+        res = json.loads(deserialized)
+        if str(res["answer_message"]) == "balance_changed":
+            box.showinfo("Успех", "Ваш баланс был успешно пополнен")
+            CURBALANCE = float(res["balance"]) + BALANCE
+            print(balance)
+        elif str(res["answer_message"]) == "balance_not_changed":
+            box.showerror("Ошибка", "При пополнении баланса возникла ошибка")
+    return CURBALANCE
 
 
 def UsersHandlerWindow():
@@ -353,11 +509,11 @@ def UsersHandlerWindow():
     for i in sortedList:
         textPermission = "Администратор" if i[3] == 1 else "Пользователь"
         text.insert(
-            END, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission)
+            END, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission + " Баланс: " + str(i[4]) + " руб.")
     text.pack(side=TOP, pady=20)
 
     del_btn = Button(userHandlerWindow, text="Удалить",
-                     font=('Arial', 14), command=lambda: DeleteSelectedObject(text, sortedList))
+                     font=('Arial', 14), command=lambda: DeleteSelectedObject(text, sortedList, 0))
     del_btn.pack(side=LEFT, pady=10, padx=20)
     return_btn = Button(userHandlerWindow, text="Вернуться",
                         font=('Arial', 14), command=lambda: [userHandlerWindow.destroy(), handlerTitleFrame.destroy(), AdministratorDashboard()])
@@ -370,36 +526,69 @@ def UsersHandlerWindow():
     adduser_btn.pack(side=LEFT, pady=10, padx=20)
 
 
-def DeleteSelectedObject(text, tempList):
-    tempStr = ""
-    sortedList = sorted(tempList, key=lambda x: x[2])
-    print(sortedList)
-    for i in text.curselection():
-        tempStr = text.get(i)
-        print(tempStr)
-        regex_id = re.search('(?<=: )\w+', tempStr)
-        id = int(regex_id.group(0))
-        for list_index, i in enumerate(sortedList):
-            if id == i[2]:
-                delObjectData = QueryModel(
-                    sortedList[list_index][0], sortedList[list_index][1], 4, "")
-                JsonObject = delObjectData.toJSON()
-                serialized = json.dumps(JsonObject)
-                client.sendall(serialized.encode(FORMAT))
-                del_answer_length = client.recv(HEADER).decode(FORMAT)
-                del_answer = client.recv(int(del_answer_length))
-                del_answer = del_answer.decode(FORMAT)
-                if str(del_answer == "successfully_deleted"):
-                    box.showinfo("Успех!", "Вы успешно удалили пользователя!")
-                    text.delete(i)
-                elif str(del_answer == "failed_deletion"):
-                    box.showerror(
-                        "Ошибка!", "Не удалось удалить пользователя!")
-                else:
-                    box.showerror("Ошибка!", "Неизвестная ошибка!")
-        else:
-            box.showerror(
-                "Ошибка!", "Не удалось отправить данные на сервер!")
+def DeleteSelectedObject(text, tempList, token):
+    if token == 0:
+        tempStr = ""
+        sortedList = sorted(tempList, key=lambda x: x[2])
+        print(sortedList)
+        for i in text.curselection():
+            tempStr = text.get(i)
+            print(tempStr)
+            regex_id = re.search('(?<=: )\w+', tempStr)
+            id = int(regex_id.group(0))
+            for list_index, i in enumerate(sortedList):
+                if id == i[2]:
+                    delObjectData = classes.QueryModel(
+                        sortedList[list_index][0], sortedList[list_index][1], "", 4)
+                    JsonObject = delObjectData.toJSON()
+                    serialized = json.dumps(JsonObject)
+                    client.sendall(serialized.encode(FORMAT))
+                    del_answer_length = client.recv(HEADER).decode(FORMAT)
+                    del_answer = client.recv(int(del_answer_length))
+                    del_answer = del_answer.decode(FORMAT)
+                    if str(del_answer == "successfully_deleted"):
+                        box.showinfo(
+                            "Успех!", "Вы успешно удалили пользователя!")
+                        text.delete(i)
+                    elif str(del_answer == "failed_deletion"):
+                        box.showerror(
+                            "Ошибка!", "Не удалось удалить пользователя!")
+                    else:
+                        box.showerror("Ошибка!", "Неизвестная ошибка!")
+            else:
+                box.showerror(
+                    "Ошибка!", "Не удалось отправить данные на сервер!")
+    elif token == 1:
+        tempStr = ""
+        sortedList = sorted(tempList, key=lambda x: x[0])
+        print(sortedList)
+        for i in text.curselection():
+            tempStr = text.get(i)
+            print(tempStr)
+            regex_id = re.search('(?<=: )\w+', tempStr)
+            id = int(regex_id.group(0))
+            for list_index, i in enumerate(sortedList):
+                if id == i[0]:
+                    delObjectData = classes.TaxiModel(
+                        sortedList[list_index][1], 7, sortedList[list_index][2], sortedList[list_index][3], sortedList[list_index][4], sortedList[list_index][5])
+                    JsonObject = delObjectData.toJSON()
+                    serialized = json.dumps(JsonObject)
+                    client.sendall(serialized.encode(FORMAT))
+                    del_answer_length = client.recv(HEADER).decode(FORMAT)
+                    del_answer = client.recv(int(del_answer_length))
+                    del_answer = del_answer.decode(FORMAT)
+                    if str(del_answer == "car_successfully_deleted"):
+                        box.showinfo(
+                            "Успех!", "Вы успешно удалили автомобиль!")
+                        text.delete(i)
+                    elif str(del_answer == "failed_car_deletion"):
+                        box.showerror(
+                            "Ошибка!", "Не удалось удалить автомобиль!")
+                    else:
+                        box.showerror("Ошибка!", "Неизвестная ошибка!")
+            else:
+                box.showerror(
+                    "Ошибка!", "Не удалось отправить данные на сервер!")
 
 
 def send(msg):
