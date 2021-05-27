@@ -155,7 +155,7 @@ def BalanceAdditionQuery(msg_name, msg_balance):
     valid = False
     for row in rows:
         print(row)
-        if msg_name == row[0]:
+        if msg_name == row[0] and float(msg_balance) > 0:
             cursor.execute(
                 f'UPDATE public."user" SET balance= (balance +\'{msg_balance}\') WHERE "user" = \'{msg_name}\'')
             con.commit()
@@ -231,7 +231,7 @@ def Login(msg_name, msg_password):
     if permission == 0:
         if valid == True:
             balance = row[4]
-            answer = AnswerModel("access_granted", balance)
+            answer = AnswerModel("access_granted", balance, permission)
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))

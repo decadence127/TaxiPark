@@ -2,6 +2,7 @@ import socket
 from tkinter import *
 import tkinter.messagebox as box
 import json
+from tkinter import ttk
 import re
 from Components import classes
 
@@ -44,6 +45,21 @@ DRIVERMIDDLENAME = StringVar()
 DRIVERAGE = StringVar()
 
 BALANCE = StringVar()
+
+METHODPOSITIVE = StringVar()
+METHODNEGATIVE = StringVar()
+METHODMONEYLOSS = StringVar()
+METHODMONEYGAIN = StringVar()
+
+METHODPOSITIVE1 = StringVar()
+METHODNEGATIVE1 = StringVar()
+METHODMONEYLOSS1 = StringVar()
+METHODMONEYGAIN1 = StringVar()
+
+METHODPOSITIVE2 = StringVar()
+METHODNEGATIVE2 = StringVar()
+METHODMONEYLOSS2 = StringVar()
+METHODMONEYGAIN2 = StringVar()
 
 
 def SendCarQuery(token, carmodel, drivername, driversurname, drivermiddlename, driverage):
@@ -271,6 +287,11 @@ def deleteWindow(button):
     button["state"] = 'normal'
 
 
+def deleteMethodWindow(button):
+    methodWindow.destroy()
+    button["state"] = 'normal'
+
+
 def deleteBalanceFrame(button):
     balanceFrame.destroy()
     button["state"] = 'normal'
@@ -412,7 +433,7 @@ def NumberValidation():
 
 
 def DashBoardWindow(userProfile):
-    global dashboardFrame, dashboardTitleFrame
+    global dashboardFrame, dashboardTitleFrame, method_btn
     dashboardTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
     dashboardTitleFrame.pack(side=TOP)
@@ -433,6 +454,226 @@ def DashBoardWindow(userProfile):
     profile_btn = Button(dashboardFrame, text="Профиль",
                          font=('Arial', 14), command=lambda: [dashboardFrame.destroy(), dashboardTitleFrame.destroy(), ProfilePageFrame(userProfile)])
     profile_btn.grid(row=3, column=0, sticky=W, padx=80, pady=10)
+    method_btn = Button(dashboardFrame, text="Метод", font=(
+        'Arial', 14), command=lambda: [MethodWindow(method_btn)])
+    method_btn.grid(row=4, column=0, sticky=W, padx=80, pady=10)
+
+
+def MethodWindow(button):
+    global methodWindow, variable, choice_box
+    choices = ('2 Проекта', '3 Проекта')
+    variable = StringVar()
+    methodWindow = Toplevel(master)
+    methodWindow.title("Экспертный метод")
+    methodWindow.geometry("520x680")
+    methodWindow.resizable(False, False)
+    methodWindow.iconphoto(False, icon)
+    methodWindow.protocol(
+        "WM_DELETE_WINDOW", lambda: deleteMethodWindow(button))
+    choice_box = ttk.Combobox(methodWindow, textvariable=variable)
+    choice_box['values'] = choices
+    choice_box.grid()
+    choice_box["state"] = 'readonly'
+    choice_box.bind('<<ComboboxSelected>>', ComboboxAction)
+    return_btn = Button(methodWindow, text="Вернуться",
+                        font=('Arial', 14), command=lambda: [CleanVariables(), methodWindow.destroy(), choice_box.set(""), MethodWindow(method_btn)])
+    return_btn.grid(row=18, sticky=W)
+
+
+def CleanVariables():
+    METHODPOSITIVE.set("")
+    METHODNEGATIVE.set("")
+    METHODMONEYLOSS.set("")
+    METHODMONEYGAIN.set("")
+
+    METHODPOSITIVE1.set("")
+    METHODNEGATIVE1.set("")
+    METHODMONEYLOSS1.set("")
+    METHODMONEYGAIN1.set("")
+
+    METHODPOSITIVE2.set("")
+    METHODNEGATIVE2.set("")
+    METHODMONEYLOSS2.set("")
+    METHODMONEYGAIN2.set("")
+
+
+def ComboboxAction(event):
+    if variable.get() == '2 Проекта':
+        choice_box["state"] = 'disabled'
+        lbl_project = Label(methodWindow, text="Расширить охват на юг города: ",
+                            font=('courier', 10), bd=8)
+        lbl_project.grid(row=1, sticky=W)
+        lbl_positive = Label(methodWindow, text="Введите шанс на успех:",
+                             font=('courier', 10), bd=8)
+        lbl_positive.grid(row=2, sticky=W)
+
+        lbl_negative = Label(methodWindow, text="Введите шанс на неудачу:",
+                             font=('courier', 10), bd=8)
+        lbl_negative.grid(row=3, sticky=W)
+
+        lbl_revenue = Label(methodWindow, text="Введите сумму прибыли:",
+                            font=('courier', 10), bd=8)
+        lbl_revenue.grid(row=4, sticky=W)
+
+        lbl_loss = Label(methodWindow, text="Введите сумму потерь:",
+                         font=('courier', 10), bd=8)
+        lbl_loss.grid(row=5, sticky=W)
+
+        entr_positive = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODPOSITIVE, width=15)
+        entr_positive.grid(row=2, column=1)
+
+        entr_negative = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODNEGATIVE, width=15)
+        entr_negative.grid(row=3, column=1)
+
+        entr_revenue = Entry(methodWindow, font=('verdana', 10),
+                             textvariable=METHODMONEYGAIN, width=15)
+        entr_revenue.grid(row=4, column=1)
+
+        entr_loss = Entry(methodWindow, font=('verdana', 10),
+                          textvariable=METHODMONEYLOSS, width=15)
+        entr_loss.grid(row=5, column=1)
+        lbl_project = Label(methodWindow, text="Расширить охват на север города: ",
+                            font=('courier', 10), bd=8)
+        lbl_project.grid(row=7, sticky=W)
+        lbl_positive = Label(methodWindow, text="Введите шанс на успех:",
+                             font=('courier', 10), bd=8)
+        lbl_positive.grid(row=8, sticky=W)
+
+        lbl_negative = Label(methodWindow, text="Введите шанс на неудачу:",
+                             font=('courier', 10), bd=8)
+        lbl_negative.grid(row=9, sticky=W)
+
+        lbl_revenue = Label(methodWindow, text="Введите сумму прибыли:",
+                            font=('courier', 10), bd=8)
+        lbl_revenue.grid(row=10, sticky=W)
+
+        lbl_loss = Label(methodWindow, text="Введите сумму потерь:",
+                         font=('courier', 10), bd=8)
+        lbl_loss.grid(row=11, sticky=W)
+
+        entr_positive = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODPOSITIVE1, width=15)
+        entr_positive.grid(row=8, column=1)
+
+        entr_negative = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODNEGATIVE1, width=15)
+        entr_negative.grid(row=9, column=1)
+
+        entr_revenue = Entry(methodWindow, font=('verdana', 10),
+                             textvariable=METHODMONEYGAIN1, width=15)
+        entr_revenue.grid(row=10, column=1)
+
+        entr_loss = Entry(methodWindow, font=('verdana', 10),
+                          textvariable=METHODMONEYLOSS1, width=15)
+        entr_loss.grid(row=11, column=1)
+
+    if variable.get() == '3 Проекта':
+        choice_box["state"] = 'disabled'
+        lbl_project = Label(methodWindow, text="Расширить охват на юг города: ",
+                            font=('courier', 10), bd=8)
+        lbl_project.grid(row=1, sticky=W)
+        lbl_positive = Label(methodWindow, text="Введите шанс на успех:",
+                             font=('courier', 10), bd=8)
+        lbl_positive.grid(row=2, sticky=W)
+
+        lbl_negative = Label(methodWindow, text="Введите шанс на неудачу:",
+                             font=('courier', 10), bd=8)
+        lbl_negative.grid(row=3, sticky=W)
+
+        lbl_revenue = Label(methodWindow, text="Введите сумму прибыли:",
+                            font=('courier', 10), bd=8)
+        lbl_revenue.grid(row=4, sticky=W)
+
+        lbl_loss = Label(methodWindow, text="Введите сумму потерь:",
+                         font=('courier', 10), bd=8)
+        lbl_loss.grid(row=5, sticky=W)
+
+        entr_positive = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODPOSITIVE, width=15)
+        entr_positive.grid(row=2, column=1)
+
+        entr_negative = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODNEGATIVE, width=15)
+        entr_negative.grid(row=3, column=1)
+
+        entr_revenue = Entry(methodWindow, font=('verdana', 10),
+                             textvariable=METHODMONEYGAIN, width=15)
+        entr_revenue.grid(row=4, column=1)
+
+        entr_loss = Entry(methodWindow, font=('verdana', 10),
+                          textvariable=METHODMONEYLOSS, width=15)
+        entr_loss.grid(row=5, column=1)
+
+        lbl_project = Label(methodWindow, text="Расширить охват на север города: ",
+                            font=('courier', 10), bd=8)
+        lbl_project.grid(row=7, sticky=W)
+        lbl_positive = Label(methodWindow, text="Введите шанс на успех:",
+                             font=('courier', 10), bd=8)
+        lbl_positive.grid(row=8, sticky=W)
+
+        lbl_negative = Label(methodWindow, text="Введите шанс на неудачу:",
+                             font=('courier', 10), bd=8)
+        lbl_negative.grid(row=9, sticky=W)
+
+        lbl_revenue = Label(methodWindow, text="Введите сумму прибыли:",
+                            font=('courier', 10), bd=8)
+        lbl_revenue.grid(row=10, sticky=W)
+
+        lbl_loss = Label(methodWindow, text="Введите сумму потерь:",
+                         font=('courier', 10), bd=8)
+        lbl_loss.grid(row=11, sticky=W)
+
+        entr_positive = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODPOSITIVE1, width=15)
+        entr_positive.grid(row=8, column=1)
+
+        entr_negative = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODNEGATIVE1, width=15)
+        entr_negative.grid(row=9, column=1)
+
+        entr_revenue = Entry(methodWindow, font=('verdana', 10),
+                             textvariable=METHODMONEYGAIN1, width=15)
+        entr_revenue.grid(row=10, column=1)
+
+        entr_loss = Entry(methodWindow, font=('verdana', 10),
+                          textvariable=METHODMONEYLOSS1, width=15)
+        entr_loss.grid(row=11, column=1)
+        lbl_project = Label(methodWindow, text="Расширить охват за городом: ",
+                            font=('courier', 10), bd=8)
+        lbl_project.grid(row=13, sticky=W)
+        lbl_positive = Label(methodWindow, text="Введите шанс на успех:",
+                             font=('courier', 10), bd=8)
+        lbl_positive.grid(row=14, sticky=W)
+
+        lbl_negative = Label(methodWindow, text="Введите шанс на неудачу:",
+                             font=('courier', 10), bd=8)
+        lbl_negative.grid(row=15, sticky=W)
+
+        lbl_revenue = Label(methodWindow, text="Введите сумму прибыли:",
+                            font=('courier', 10), bd=8)
+        lbl_revenue.grid(row=16, sticky=W)
+
+        lbl_loss = Label(methodWindow, text="Введите сумму потерь:",
+                         font=('courier', 10), bd=8)
+        lbl_loss.grid(row=17, sticky=W)
+
+        entr_positive = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODPOSITIVE2, width=15)
+        entr_positive.grid(row=14, column=1)
+
+        entr_negative = Entry(methodWindow, font=('verdana', 10),
+                              textvariable=METHODNEGATIVE2, width=15)
+        entr_negative.grid(row=15, column=1)
+
+        entr_revenue = Entry(methodWindow, font=('verdana', 10),
+                             textvariable=METHODMONEYGAIN2, width=15)
+        entr_revenue.grid(row=16, column=1)
+
+        entr_loss = Entry(methodWindow, font=('verdana', 10),
+                          textvariable=METHODMONEYLOSS2, width=15)
+        entr_loss.grid(row=17, column=1)
 
 
 def ProfilePageFrame(userProfile):

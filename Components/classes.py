@@ -25,6 +25,7 @@ class QueryModel:
     balance = 0.0
     query_token = 0
     secret_key = ""
+    permission = 0
 
     def __init__(self) -> None:
         pass
@@ -42,6 +43,10 @@ class QueryModel:
             self.secret_key = args[2]
             self.query_token = args[3]
             self.balance = args[4]
+
+        elif len(args) == 2:
+            self.balance = args[0]
+            self.permission = args[1]
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
@@ -74,10 +79,49 @@ class TaxiModel:
 class AnswerModel:
     balance = 0.0
     answer_message = ""
+    permission: int
 
-    def __init__(self, answer_message="", balance=0.0):
-        self.answer_message = answer_message
-        self.balance = balance
+    def __init__(self, *args):
+        if len(args) == 3:
+            self.answer_message = args[0]
+            self.balance = args[1]
+            self.permission = args[2]
+        if len(args) == 2:
+            self.answer_message = args[0]
+            self.balance = args[1]
+        if len(args) == 1:
+            self.answer_message = args[0]
+
+    def toJSON(self):
+        return json.dumps(self, default=lambda o: o.__dict__,
+                          sort_keys=True, indent=4)
+
+
+class Project:
+    positiveProb: float
+    negativeProb: float
+    moneyLoss: int
+    moneyGain: int
+
+    def __init__(self, positiveProb, negativeProb, moneyLoss, moneyGain):
+        self.positiveProb = positiveProb
+        self.negativeProb = negativeProb
+        self.moneyLoss = moneyLoss
+        self.moneyGain = moneyGain
+
+    def __str__(self):
+        return "{} {} {} {}\n".format(self.positiveProb, self.negativeProb, self.moneyLoss, self.moneyGain)
+
+
+class MethodQuery:
+    projectData = []
+
+    def __init__(self):
+        self.projectData = []
+
+    def addProject(self, *args):
+        for i in range(len(args)):
+            self.projectData.append(args[i])
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
