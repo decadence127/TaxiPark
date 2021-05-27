@@ -44,7 +44,6 @@ DRIVERMIDDLENAME = StringVar()
 DRIVERAGE = StringVar()
 
 BALANCE = StringVar()
-CURBALANCE = 0.0
 
 
 def SendCarQuery(token, carmodel, drivername, driversurname, drivermiddlename, driverage):
@@ -86,10 +85,9 @@ def SendQuery(login, password, token, secret_key):
             deserialized = json.loads(received_answer)
             res = json.loads(deserialized)
             if str(res["answer_message"]) == "access_granted":
-                balance = 0.0
-                balance = res["balance"]
-                CURBALANCE = res["balance"]
-                DashBoardWindow(balance)
+                userProfile = classes.QueryModel(
+                    res["balance"], res["permission"])
+                DashBoardWindow(userProfile)
             elif str(res["answer_message"]) == "access_denied":
                 box.showerror("Данные были введены неверно",
                               "Попробуйте снова или зарегистрируйтесь")
@@ -275,9 +273,6 @@ def deleteWindow(button):
 
 def deleteBalanceFrame(button):
     balanceFrame.destroy()
-    dashboardTitleFrame.destroy()
-    dashboardFrame.destroy()
-    DashBoardWindow(CURBALANCE)
     button["state"] = 'normal'
 
 
@@ -416,7 +411,7 @@ def NumberValidation():
         return False
 
 
-def DashBoardWindow(balance):
+def DashBoardWindow(userProfile):
     global dashboardFrame, dashboardTitleFrame
     dashboardTitleFrame = Frame(
         master, height=100, width=640, bd=1, relief=SOLID)
@@ -429,18 +424,34 @@ def DashBoardWindow(balance):
                       font=('courier', 14), bd=1, width=640)
     lbl_title.pack()
 
-    lbl_balance = Label(dashboardTitleFrame,
-                        text=f"Ваш баланс, {balance} руб.", font=('courier', 14), bd=1)
-    lbl_balance.pack()
+    btn_logout = Button(dashboardFrame, text="Выйти", font=(
+        'Arial', 14), command=lambda: [dashboardFrame.destroy(), dashboardTitleFrame.destroy(), LoginPanel()])
+    btn_logout.grid(row=5, columnspan=2, padx=520)
     btn_add_balance = Button(dashboardFrame, text="Пополнить баланс", font=(
-        'Arial', 14), command=lambda: [BalanceAddition(btn_add_balance)])
-    btn_add_balance.pack(side=LEFT, pady=10, padx=20)
-    refresh_balance_btn = Button(dashboardFrame, text="Обновить",
-                                 font=('Arial', 14), command=lambda: [dashboardTitleFrame.destroy(), dashboardFrame.destroy(), DashBoardWindow(CURBALANCE)])
-    refresh_balance_btn.pack(side=LEFT, pady=10, padx=20)
+        'Arial', 14), command=lambda: [BalanceAddition(btn_add_balance, userProfile)])
+    btn_add_balance.grid(row=2, column=0, sticky=W, padx=80, pady=10)
+    profile_btn = Button(dashboardFrame, text="Профиль",
+                         font=('Arial', 14), command=lambda: [dashboardFrame.destroy(), dashboardTitleFrame.destroy(), ProfilePageFrame(userProfile)])
+    profile_btn.grid(row=3, column=0, sticky=W, padx=80, pady=10)
 
 
-def BalanceAddition(button):
+def ProfilePageFrame(userProfile):
+    profileFrame = Frame(master, height=150, width=640, bd=1, relief=SOLID)
+    profileFrame.pack(side=TOP)
+
+    profileButtonsFrame = Frame(master)
+    profileButtonsFrame.pack(side=TOP, pady=20)
+
+    permissions = "Администратор" if userProfile.permission == 1 else "Пользователь/Эксперт"
+    lbl_maininfo = Label(profileFrame,
+                         text=f"Логин: {LOGINUSER.get()}. \n{permissions}\n Ваш баланс: {userProfile.balance} руб.", font=('courier', 14), bd=1, width=640)
+    lbl_maininfo.pack()
+    return_btn = Button(profileButtonsFrame, text="Вернуться",
+                        font=('Arial', 14), command=lambda: [profileFrame.destroy(), profileButtonsFrame.destroy(), DashBoardWindow(userProfile)])
+    return_btn.grid(row=3, column=0, sticky=W, padx=80, pady=10)
+
+
+def BalanceAddition(button, userProfile):
     global balanceFrame
     button["state"] = 'disabled'
     balanceFrame = Toplevel(master)
@@ -452,20 +463,20 @@ def BalanceAddition(button):
         "WM_DELETE_WINDOW", lambda: deleteBalanceFrame(button))
 
     lbl_balance = Label(balanceFrame, text="Баланс: ", font=('Arial', 14))
-    lbl_balance.grid(row=2)
+    lbl_balance.grid(row=3)
 
     entr_balance = Entry(balanceFrame, font=(
         'verdana', 14), textvariable=BALANCE, width=15)
-    entr_balance.grid(row=2, column=1)
+    entr_balance.grid(row=3, column=1)
     btn_balance = Button(balanceFrame, text="Пополнить", font=('Arial', 14),
-                         command=lambda: [SendBalanceQuery(BALANCE)])
-    btn_balance.grid(row=3, column=1, pady=20, padx=20)
+                         command=lambda: [SendBalanceQuery(BALANCE, userProfile)])
+    btn_balance.grid(row=5, column=1, pady=20, padx=20)
     return_btn = Button(balanceFrame, text="Вернуться",
-                        font=('Arial', 14), command=lambda: [balanceFrame.destroy(), balanceFrame.destroy()])
-    return_btn.grid(row=3, column=2, pady=20, padx=20)
+                        font=('Arial', 14), command=lambda: [deleteBalanceFrame(button)])
+    return_btn.grid(row=5, column=2, pady=20, padx=20)
 
 
-def SendBalanceQuery(balance):
+def SendBalanceQuery(balance, userProfile):
     if balance.get() == "":
         box.showerror("Ошибка", "Поля не должны быть пустыми ")
         return
@@ -485,11 +496,10 @@ def SendBalanceQuery(balance):
         res = json.loads(deserialized)
         if str(res["answer_message"]) == "balance_changed":
             box.showinfo("Успех", "Ваш баланс был успешно пополнен")
-            CURBALANCE = float(res["balance"]) + BALANCE
+            userProfile.balance = float(res["balance"]) + float(tempBalance)
             print(balance)
         elif str(res["answer_message"]) == "balance_not_changed":
             box.showerror("Ошибка", "При пополнении баланса возникла ошибка")
-    return CURBALANCE
 
 
 def UsersHandlerWindow():
