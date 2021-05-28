@@ -115,9 +115,11 @@ class Project:
 
 class MethodQuery:
     projectData = []
+    query_token: int
 
-    def __init__(self):
+    def __init__(self, query_token):
         self.projectData = []
+        self.query_token = query_token
 
     def addProject(self, *args):
         for i in range(len(args)):

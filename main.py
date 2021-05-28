@@ -106,6 +106,86 @@ def databaseDataRequest(token):
         con.close()
 
 
+def MethodCalculator(projectData):
+    if len(projectData) == 2:
+        calc_moneyGain = projectData[0]["moneyGain"]
+        calc_moneyLoss = projectData[0]["moneyLoss"]
+        calc_negativeProb = projectData[0]["negativeProb"]
+        calc_positiveProb = projectData[0]["positiveProb"]
+        calc_moneyGain1 = projectData[1]["moneyGain"]
+        calc_moneyLoss1 = projectData[1]["moneyLoss"]
+        calc_negativeProb1 = projectData[1]["negativeProb"]
+        calc_positiveProb1 = projectData[1]["positiveProb"]
+
+        total_result1 = (float(calc_positiveProb) * float(calc_moneyGain)) + \
+            (float(calc_negativeProb) * (0.0-float(calc_moneyLoss)))
+        print(total_result1)
+        total_result2 = (float(calc_positiveProb1) * float(calc_moneyGain1)) + \
+            (float(calc_negativeProb1) * (0.0-float(calc_moneyLoss1)))
+        print(total_result2)
+
+        if total_result1 > total_result2:
+            print(
+                f"Наиболее целесообразно выбрать стратегию 1, т.е. расширить охват города на юг, стратегию 2 можно отбросить. ОДО наилучшего решения равна {total_result1} руб.")
+        elif total_result2 > total_result1:
+            print(
+                f"Наиболее целесообразно выбрать стратегию 2, т.е. расширить охват города на север, а стратегию 1 можно отбросить. ОДО наилучшего решения равна {total_result2} руб.")
+        else:
+            print("Коэффиценты проектов равны")
+
+        answer = AnswerModel("method_created")
+        JsonObject = answer.toJSON()
+        serialized = json.dumps(JsonObject)
+        conn.sendall(serialized.encode(FORMAT))
+    elif len(projectData) == 3:
+        calc_moneyGain = projectData[0]["moneyGain"]
+        calc_moneyLoss = projectData[0]["moneyLoss"]
+        calc_negativeProb = projectData[0]["negativeProb"]
+        calc_positiveProb = projectData[0]["positiveProb"]
+        calc_moneyGain1 = projectData[1]["moneyGain"]
+        calc_moneyLoss1 = projectData[1]["moneyLoss"]
+        calc_negativeProb1 = projectData[1]["negativeProb"]
+        calc_positiveProb1 = projectData[1]["positiveProb"]
+        calc_moneyGain2 = projectData[2]["moneyGain"]
+        calc_moneyLoss2 = projectData[2]["moneyLoss"]
+        calc_negativeProb2 = projectData[2]["negativeProb"]
+        calc_positiveProb2 = projectData[2]["positiveProb"]
+
+        total_result1 = (float(calc_positiveProb) * float(calc_moneyGain)) + \
+            (float(calc_negativeProb) * (0.0-float(calc_moneyLoss)))
+        print(total_result1)
+        total_result2 = (float(calc_positiveProb1) * float(calc_moneyGain1)) + \
+            (float(calc_negativeProb1) * (0.0-float(calc_moneyLoss1)))
+        print(total_result2)
+        total_result3 = (float(calc_positiveProb2) * float(calc_moneyGain2)) + \
+            (float(calc_negativeProb2) * (0.0-float(calc_moneyLoss2)))
+        print(total_result3)
+
+        if total_result1 > total_result2 and total_result1 > total_result3:
+            print(
+                f"Наиболее целесообразно выбрать стратегию 1, т.е. расширить охват города на юг, а стратегии 2 и 3 можно отбросить. ОДО наилучшего решения равна {total_result1} руб.")
+            answer = AnswerModel("method1_best")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
+        elif total_result2 > total_result1 and total_result2 > total_result3:
+            print(
+                f"Наиболее целесообразно выбрать стратегию 2, т.е. расширить охват города на север, а стратегии 1 и 3 можно отбросить. ОДО наилучшего решения равна {total_result2} руб.")
+            answer = AnswerModel("method2_best")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
+        elif total_result3 > total_result1 and total_result3 > total_result2:
+            print(
+                f"Наиболее целесообразно выбрать стратегию 3, т.е. расширить охват за городом, а стратегии 1 и 2 можно отбросить. ОДО наилучшего решения равна {total_result3} руб.")
+            answer = AnswerModel("method3_best")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
+        else:
+            print("Коэффиценты проектов равны")
+
+
 def handle_client(conn, addr):
     print(f"[NEW CONNECTION] {addr} connected.")
 
@@ -141,6 +221,8 @@ def handle_client(conn, addr):
                              res["_TaxiModel__driverData"]["_Driver__name"])
         elif(int(res["query_token"] == 8)):
             BalanceAdditionQuery(res["login"], res["balance"])
+        elif(int(res["query_token"] == 9)):
+            MethodCalculator(res["projectData"])
 
         else:
             print("Error")

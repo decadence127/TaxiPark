@@ -84,6 +84,73 @@ def SendCarQuery(token, carmodel, drivername, driversurname, drivermiddlename, d
                           "Автомобиль не удалось добавить")
 
 
+def SendMethodQuery(token, methodPosProb, methodNegProg, methodMoneyLoss, methodMoneyGain, methodPosProb1, methodNegProg1, methodMoneyLoss1, methodMoneyGain1, methodPosProb2, methodNegProg2, methodMoneyLoss2, methodMoneyGain2):
+    tempPosProb = methodPosProb.get()
+    tempNegProb = methodNegProg.get()
+    tempMoneyLoss = methodMoneyLoss.get()
+    tempMoneyGain = methodMoneyGain.get()
+
+    tempPosProb1 = methodPosProb1.get()
+    tempNegProb1 = methodNegProg1.get()
+    tempMoneyLoss1 = methodMoneyLoss1.get()
+    tempMoneyGain1 = methodMoneyGain1.get()
+
+    tempPosProb2 = methodPosProb2.get()
+    tempNegProb2 = methodNegProg2.get()
+    tempMoneyLoss2 = methodMoneyLoss2.get()
+    tempMoneyGain2 = methodMoneyGain2.get()
+    print(tempPosProb + tempNegProb)
+
+    if token == 0:
+        if float(tempPosProb) + float(tempNegProb) == 1 and float(tempPosProb1) + float(tempNegProb1) == 1:
+            project1 = classes.Project(tempPosProb, tempNegProb,
+                                       tempMoneyLoss, tempMoneyGain)
+            project2 = classes.Project(tempPosProb1, tempNegProb1,
+                                       tempMoneyLoss1, tempMoneyGain1)
+            methodQuery = classes.MethodQuery(9)
+            methodQuery.addProject(project1, project2)
+            JsonObject = methodQuery.toJSON()
+            serialized = json.dumps(JsonObject)
+            client.sendall(serialized.encode(FORMAT))
+            received_answer = client.recv(1024).decode(FORMAT)
+            deserialized = json.loads(received_answer)
+            res = json.loads(deserialized)
+            if str(res["answer_message"]) == "method1_best":
+                box.showinfo("Метод", "Стратегия 1 будет наилучшим выбором")
+            elif str(res["answer_message"]) == "method2_best":
+                box.showinfo("Метод", "Стратегия 2 будет наилучшим выбором")
+        else:
+            box.showerror(
+                "Ошибка", "Сумма вероятностей не должна превышать 1!")
+
+    elif token == 1:
+        if float(tempPosProb) + float(tempNegProb) == 1 and float(tempPosProb1) + float(tempNegProb1) == 1 or float(tempPosProb2) + float(tempNegProb2) == 1:
+            project1 = classes.Project(tempPosProb, tempNegProb,
+                                       tempMoneyLoss, tempMoneyGain)
+            project2 = classes.Project(tempPosProb1, tempNegProb1,
+                                       tempMoneyLoss1, tempMoneyGain1)
+            project3 = classes.Project(tempPosProb2, tempNegProb2,
+                                       tempMoneyLoss2, tempMoneyGain2)
+
+            methodQuery = classes.MethodQuery(9)
+            methodQuery.addProject(project1, project2, project3)
+            JsonObject = methodQuery.toJSON()
+            serialized = json.dumps(JsonObject)
+            client.sendall(serialized.encode(FORMAT))
+            received_answer = client.recv(1024).decode(FORMAT)
+            deserialized = json.loads(received_answer)
+            res = json.loads(deserialized)
+            if str(res["answer_message"]) == "method1_best":
+                box.showinfo("Метод", "Стратегия 1 будет наилучшим выбором")
+            elif str(res["answer_message"]) == "method2_best":
+                box.showinfo("Метод", "Стратегия 2 будет наилучшим выбором")
+            elif str(res["answer_message"]) == "method3_best":
+                box.showinfo("Метод", "Стратегия 3 будет наилучшим выбором")
+        else:
+            box.showerror(
+                "Ошибка", "Сумма вероятностей не должна превышать 1!")
+
+
 def SendQuery(login, password, token, secret_key):
     if login.get() == "" or login.get() == "":
         box.showerror("Ошибка", "Поля не должны быть пустыми ")
@@ -289,6 +356,7 @@ def deleteWindow(button):
 
 def deleteMethodWindow(button):
     methodWindow.destroy()
+    CleanVariables()
     button["state"] = 'normal'
 
 
@@ -477,7 +545,7 @@ def MethodWindow(button):
     choice_box.bind('<<ComboboxSelected>>', ComboboxAction)
     return_btn = Button(methodWindow, text="Вернуться",
                         font=('Arial', 14), command=lambda: [CleanVariables(), methodWindow.destroy(), choice_box.set(""), MethodWindow(method_btn)])
-    return_btn.grid(row=18, sticky=W)
+    return_btn.grid(row=18, sticky=W, padx=10, pady=10)
 
 
 def CleanVariables():
@@ -568,6 +636,9 @@ def ComboboxAction(event):
         entr_loss = Entry(methodWindow, font=('verdana', 10),
                           textvariable=METHODMONEYLOSS1, width=15)
         entr_loss.grid(row=11, column=1)
+        two_btn = Button(methodWindow, text="Отправить", font=(
+            'verdana', 14), command=lambda: [SendMethodQuery(0, METHODPOSITIVE, METHODNEGATIVE, METHODMONEYLOSS, METHODMONEYGAIN, METHODPOSITIVE1, METHODNEGATIVE1, METHODMONEYLOSS1, METHODMONEYGAIN1, METHODPOSITIVE2, METHODNEGATIVE2, METHODMONEYLOSS2, METHODMONEYGAIN2)])
+        two_btn.grid(row=18, column=1, padx=10, pady=10)
 
     if variable.get() == '3 Проекта':
         choice_box["state"] = 'disabled'
@@ -674,6 +745,10 @@ def ComboboxAction(event):
         entr_loss = Entry(methodWindow, font=('verdana', 10),
                           textvariable=METHODMONEYLOSS2, width=15)
         entr_loss.grid(row=17, column=1)
+
+        three_btn = Button(methodWindow, text="Отправить", font=(
+            'verdana', 14), command=lambda: [SendMethodQuery(1, METHODPOSITIVE, METHODNEGATIVE, METHODMONEYLOSS, METHODMONEYGAIN, METHODPOSITIVE1, METHODNEGATIVE1, METHODMONEYLOSS1, METHODMONEYGAIN1, METHODPOSITIVE2, METHODNEGATIVE2, METHODMONEYLOSS2, METHODMONEYGAIN2)])
+        three_btn.grid(row=18, column=1, padx=10, pady=10)
 
 
 def ProfilePageFrame(userProfile):
