@@ -228,14 +228,53 @@ def handle_client(conn, addr):
         elif(int(res["query_token"] == 9)):
             MethodCalculator(res["projectData"])
         elif(int(res["query_token"] == 10)):
-            print(res)
             OrderedTaxiCalculator(
                 res["login"], res["balance"])
+        elif(int(res["query_token"] == 11)):
+            CarSearchDatabaseQuery(res["login"])
+        elif(int(res["query_token"] == 12)):
+            UserSearchDatabaseQuery(res["login"])
 
         else:
             print("Error")
 
     conn.close()
+
+
+def UserSearchDatabaseQuery(msg_string):
+    Database()
+    database_data = []
+    cursor.execute(
+        f'SELECT "user", pass, id, permission, balance FROM public."user" WHERE "user" ILIKE \'%{str(msg_string)}%\'')
+    rows = cursor.fetchall()
+    database_data.append(rows)
+    print(database_data)
+    print(type(database_data))
+    data = json.dumps(database_data)
+    sent_data = json.dumps(data)
+    conn.sendall(sent_data.encode(FORMAT))
+
+    con.commit()
+    cursor.close()
+    con.close()
+
+
+def CarSearchDatabaseQuery(msg_string):
+    Database()
+    database_data = []
+    cursor.execute(
+        f'SELECT id, model, "driverName", "driverSurname", "driverMidName", "driverAge" FROM public.taxi WHERE "driverName" ILIKE \'%{str(msg_string)}%\' or model ILIKE \'%{str(msg_string)}%\' or "driverSurname" ILIKE \'%{str(msg_string)}%\' or "driverMidName" ILIKE \'%{str(msg_string)}%\'')
+    rows = cursor.fetchall()
+    database_data.append(rows)
+    print(database_data)
+    print(type(database_data))
+    data = json.dumps(database_data)
+    sent_data = json.dumps(data)
+    conn.sendall(sent_data.encode(FORMAT))
+
+    con.commit()
+    cursor.close()
+    con.close()
 
 
 def OrderedTaxiCalculator(msg_name, msg_balance):

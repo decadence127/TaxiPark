@@ -62,6 +62,7 @@ METHODMONEYLOSS2 = StringVar()
 METHODMONEYGAIN2 = StringVar()
 
 DESTINATION = StringVar()
+SEARCHSTR = StringVar()
 
 
 def toFixed(numObj, digits=0):
@@ -207,6 +208,73 @@ def SendQuery(login, password, token, secret_key):
                 box.showerror("Ошибка", "Такой пользователь уже существует")
 
 
+def SearchObjectFrame(keystr, titleFrame, mainFrame, token):
+    if token == 0:
+        titleFrame.destroy()
+        mainFrame.destroy()
+        search_string = keystr.get()
+        searchQuery = classes.QueryModel(search_string, 0, 11)
+        JsonObject = searchQuery.toJSON()
+        serialized = json.dumps(JsonObject)
+        client.sendall(serialized.encode(FORMAT))
+
+        received_answer = client.recv(1024).decode(FORMAT)
+        deserialized = json.loads(received_answer)
+        res = json.loads(deserialized)
+        tempList = res[0]
+        print(tempList)
+        searchTitleFrame = Frame(
+            master, height=100, width=640, bd=1, relief=SOLID)
+        searchTitleFrame.pack(side=TOP)
+        lbl_title = Label(searchTitleFrame, text=f"Результат поиска по: {SEARCHSTR.get()}", font=(
+            'courier', 14), bd=1, width=640)
+        lbl_title.pack()
+
+        carHandlerWindow = Frame(master)
+        carHandlerWindow.pack(side=TOP)
+        text = Listbox(carHandlerWindow, width=640, bd=1, relief=SOLID)
+        for i in tempList:
+            text.insert(END, "id: " + str(i[0]) + ". Модель авто: " +
+                        str(i[1]) + " ФИО Водителя: " + str(i[3]) + " " + str(i[2]) + " " + str(i[4]))
+        text.grid(pady=20)
+        return_btn = Button(carHandlerWindow, text="Вернуться",
+                            font=('Arial', 14), command=lambda: [carHandlerWindow.destroy(), searchTitleFrame.destroy(), CarsHandlerWindow()])
+        return_btn.grid(row=8, sticky=W, pady=10, padx=20)
+    elif token == 1:
+        titleFrame.destroy()
+        mainFrame.destroy()
+        search_string = keystr.get()
+        searchQuery = classes.QueryModel(search_string, 0, 12)
+        JsonObject = searchQuery.toJSON()
+        serialized = json.dumps(JsonObject)
+        client.sendall(serialized.encode(FORMAT))
+
+        received_answer = client.recv(1024).decode(FORMAT)
+        deserialized = json.loads(received_answer)
+        res = json.loads(deserialized)
+        tempList = res[0]
+        print(tempList)
+        searchTitleFrame = Frame(
+            master, height=100, width=640, bd=1, relief=SOLID)
+        searchTitleFrame.pack(side=TOP)
+        lbl_title = Label(searchTitleFrame, text=f"Результат поиска по: {SEARCHSTR.get()}", font=(
+            'courier', 14), bd=1, width=640)
+        lbl_title.pack()
+
+        userHandlerWindow = Frame(master)
+        userHandlerWindow.pack(side=TOP)
+        text = Listbox(userHandlerWindow, width=640, bd=1, relief=SOLID)
+        for i in tempList:
+            textPermission = "Администратор" if i[
+                3] == 1 else f"Пользователь Баланс: {str(i[4])} руб."
+            text.insert(
+                END, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission)
+        text.grid(pady=20)
+        return_btn = Button(userHandlerWindow, text="Вернуться",
+                            font=('Arial', 14), command=lambda: [userHandlerWindow.destroy(), searchTitleFrame.destroy(), UsersHandlerWindow()])
+        return_btn.grid(row=8, sticky=W, pady=10, padx=20)
+
+
 def RequestDataList(token):
     if token == 0:
         tempList = []
@@ -221,7 +289,6 @@ def RequestDataList(token):
         except (TypeError, ValueError) as e:
             raise Exception('Data received was not in JSON format')
         res = json.loads(deserialized_list)
-        print(type(res))
         tempList = res[0]
     elif token == 1:
         tempList = []
@@ -236,7 +303,6 @@ def RequestDataList(token):
         except (TypeError, ValueError) as e:
             raise Exception('Data received was not in JSON format')
         res = json.loads(deserialized_list)
-        print(type(res))
         tempList = res[0]
     return tempList
 
@@ -419,19 +485,25 @@ def CarsHandlerWindow():
     for i in sortedList:
         text.insert(END, "id: " + str(i[0]) + ". Модель авто: " +
                     str(i[1]) + " ФИО Водителя: " + str(i[3]) + " " + str(i[2]) + " " + str(i[4]))
-    text.pack(side=TOP, pady=20)
+    text.grid(pady=20)
     del_btn = Button(carHandlerWindow, text="Удалить",
                      font=('Arial', 14), command=lambda: DeleteSelectedObject(text, tempCarList, 1))
-    del_btn.pack(side=LEFT, pady=10, padx=20)
+    del_btn.grid(row=8, sticky=W, pady=10, padx=20)
     return_btn = Button(carHandlerWindow, text="Вернуться",
                         font=('Arial', 14), command=lambda: [carHandlerWindow.destroy(), handlerTitleFrame.destroy(), AdministratorDashboard()])
-    return_btn.pack(side=LEFT, pady=10, padx=20)
+    return_btn.grid(row=8, sticky=W, pady=10, padx=140)
     refresh_btn = Button(carHandlerWindow, text="Обновить",
                          font=('Arial', 14), command=lambda: [carHandlerWindow.destroy(), handlerTitleFrame.destroy(), CarsHandlerWindow()])
-    refresh_btn.pack(side=LEFT, pady=10, padx=20)
+    refresh_btn.grid(row=8, sticky=W, pady=10, padx=280)
     adduser_btn = Button(carHandlerWindow, text="Добавить", font=(
         'Arial', 14), command=lambda: CarAdditionWindow(adduser_btn))
-    adduser_btn.pack(side=LEFT, pady=10, padx=20)
+    adduser_btn.grid(row=8, sticky=W, pady=10, padx=420)
+    search_entr = Entry(carHandlerWindow, font=(
+        'verdana', 14), textvariable=SEARCHSTR, width=15)
+    search_entr.grid(row=9, sticky=W, pady=10, padx=40)
+    search_btn = Button(carHandlerWindow, text="Найти",
+                        font=('Arial', 12), command=lambda: [SearchObjectFrame(SEARCHSTR, handlerTitleFrame, carHandlerWindow, 0)])
+    search_btn.grid(row=9, sticky=W, pady=10, padx=260)
 
 
 def CarAdditionWindow(button):
@@ -881,23 +953,30 @@ def UsersHandlerWindow():
     userHandlerWindow.pack(side=TOP)
     text = Listbox(userHandlerWindow, width=640, bd=1, relief=SOLID)
     for i in sortedList:
-        textPermission = "Администратор" if i[3] == 1 else "Пользователь"
+        textPermission = "Администратор" if i[
+            3] == 1 else f"Пользователь Баланс: { str(i[4])} руб."
         text.insert(
-            END, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission + " Баланс: " + str(i[4]) + " руб.")
-    text.pack(side=TOP, pady=20)
+            END, "id: " + str(i[2]) + ". Логин: " + i[0] + " Права доступа: " + textPermission)
+    text.grid(pady=20)
 
     del_btn = Button(userHandlerWindow, text="Удалить",
                      font=('Arial', 14), command=lambda: DeleteSelectedObject(text, sortedList, 0))
-    del_btn.pack(side=LEFT, pady=10, padx=20)
+    del_btn.grid(row=8, sticky=W, pady=10, padx=20)
     return_btn = Button(userHandlerWindow, text="Вернуться",
                         font=('Arial', 14), command=lambda: [userHandlerWindow.destroy(), handlerTitleFrame.destroy(), AdministratorDashboard()])
-    return_btn.pack(side=LEFT, pady=10, padx=20)
+    return_btn.grid(row=8, sticky=W, pady=10, padx=140)
     refresh_btn = Button(userHandlerWindow, text="Обновить",
                          font=('Arial', 14), command=lambda: [userHandlerWindow.destroy(), handlerTitleFrame.destroy(), UsersHandlerWindow()])
-    refresh_btn.pack(side=LEFT, pady=10, padx=20)
+    refresh_btn.grid(row=8, sticky=W, pady=10, padx=280)
     adduser_btn = Button(userHandlerWindow, text="Добавить", font=(
         'Arial', 14), command=lambda: RegistrationWindow(adduser_btn))
-    adduser_btn.pack(side=LEFT, pady=10, padx=20)
+    adduser_btn.grid(row=8, sticky=W, pady=10, padx=420)
+    search_entr = Entry(userHandlerWindow, font=(
+        'verdana', 14), textvariable=SEARCHSTR, width=15)
+    search_entr.grid(row=9, sticky=W, pady=10, padx=40)
+    search_btn = Button(userHandlerWindow, text="Найти",
+                        font=('Arial', 12), command=lambda: [SearchObjectFrame(SEARCHSTR, handlerTitleFrame, userHandlerWindow, 1)])
+    search_btn.grid(row=9, sticky=W, pady=10, padx=260)
 
 
 def OrderSelectedTaxi(text, tempList, userProfile):
