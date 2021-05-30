@@ -1,6 +1,5 @@
 import json
 import random
-from re import A
 import psycopg2
 import socket
 import threading
@@ -129,16 +128,29 @@ def MethodCalculator(projectData):
         if total_result1 > total_result2:
             print(
                 f"Наиболее целесообразно выбрать стратегию 1, т.е. расширить охват города на юг, стратегию 2 можно отбросить. ОДО наилучшего решения равна {total_result1} руб.")
+            answer = AnswerModel("method1_best")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
         elif total_result2 > total_result1:
             print(
                 f"Наиболее целесообразно выбрать стратегию 2, т.е. расширить охват города на север, а стратегию 1 можно отбросить. ОДО наилучшего решения равна {total_result2} руб.")
-        else:
+            answer = AnswerModel("method2_best")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
+        elif total_result1 == total_result2:
             print("Коэффиценты проектов равны")
+            answer = AnswerModel("variables_equal")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
+        else:
+            answer = AnswerModel("calc_error")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
 
-        answer = AnswerModel("method_created")
-        JsonObject = answer.toJSON()
-        serialized = json.dumps(JsonObject)
-        conn.sendall(serialized.encode(FORMAT))
     elif len(projectData) == 3:
         calc_moneyGain = projectData[0]["moneyGain"]
         calc_moneyLoss = projectData[0]["moneyLoss"]
@@ -186,8 +198,18 @@ def MethodCalculator(projectData):
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))
-        else:
+        elif total_result1 == total_result2 == total_result3:
+            answer = AnswerModel("variables_equal")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
             print("Коэффиценты проектов равны")
+        else:
+            answer = AnswerModel("calc_error")
+            JsonObject = answer.toJSON()
+            serialized = json.dumps(JsonObject)
+            conn.sendall(serialized.encode(FORMAT))
+            print("Перепроверьте введенные данные")
 
 
 def handle_client(conn, addr):

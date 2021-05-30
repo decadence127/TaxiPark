@@ -106,9 +106,11 @@ def SendMethodQuery(token, methodPosProb, methodNegProg, methodMoneyLoss, method
     tempNegProb2 = methodNegProg2.get()
     tempMoneyLoss2 = methodMoneyLoss2.get()
     tempMoneyGain2 = methodMoneyGain2.get()
-    print(tempPosProb + tempNegProb)
 
     if token == 0:
+        if tempPosProb == "" or tempNegProb == "" or tempMoneyLoss == "" or tempMoneyGain == "" or tempPosProb1 == "" or tempNegProb1 == "" or tempMoneyLoss1 == "" or tempMoneyGain1 == "":
+            box.showerror("Ошибка", "Поля не могут быть пустыми!")
+            return
         if float(tempPosProb) + float(tempNegProb) == 1 and float(tempPosProb1) + float(tempNegProb1) == 1:
             project1 = classes.Project(tempPosProb, tempNegProb,
                                        tempMoneyLoss, tempMoneyGain)
@@ -122,15 +124,28 @@ def SendMethodQuery(token, methodPosProb, methodNegProg, methodMoneyLoss, method
             received_answer = client.recv(1024).decode(FORMAT)
             deserialized = json.loads(received_answer)
             res = json.loads(deserialized)
+            print(res)
             if str(res["answer_message"]) == "method1_best":
                 box.showinfo("Метод", "Стратегия 1 будет наилучшим выбором")
             elif str(res["answer_message"]) == "method2_best":
                 box.showinfo("Метод", "Стратегия 2 будет наилучшим выбором")
+            elif str(res["answer_message"]) == "method3_best":
+                box.showinfo("Метод", "Стратегия 2 будет наилучшим выбором")
+            elif str(res["answer_message"]) == "variables_equal":
+                box.showinfo(
+                    "Метод", "Коэффиценты равны. Можно выбрать любую стратегию")
+            elif str(res["answer_message"]) == "calc_error":
+                box.showinfo(
+                    "Метод", "При подсчете коэффицентов произошла ошибка. \nПерепроверте введенные данные")
+
         else:
             box.showerror(
                 "Ошибка", "Сумма вероятностей не должна превышать 1!")
 
     elif token == 1:
+        if tempPosProb == "" or tempNegProb == "" or tempMoneyLoss == "" or tempMoneyGain == "" or tempPosProb1 == "" or tempNegProb1 == "" or tempMoneyLoss1 == "" or tempMoneyGain1 == "" or tempPosProb2 == "" or tempNegProb2 == "" or tempMoneyLoss2 == "" or tempMoneyGain2 == "":
+            box.showerror("Ошибка", "Поля не могут быть пустыми!")
+            return
         if float(tempPosProb) + float(tempNegProb) == 1 and float(tempPosProb1) + float(tempNegProb1) == 1 or float(tempPosProb2) + float(tempNegProb2) == 1:
             project1 = classes.Project(tempPosProb, tempNegProb,
                                        tempMoneyLoss, tempMoneyGain)
@@ -619,11 +634,11 @@ def MethodWindow(button):
         "WM_DELETE_WINDOW", lambda: deleteMethodWindow(button))
     choice_box = ttk.Combobox(methodWindow, textvariable=variable)
     choice_box['values'] = choices
-    choice_box.grid()
+    choice_box.grid(pady=20)
     choice_box["state"] = 'readonly'
     choice_box.bind('<<ComboboxSelected>>', ComboboxAction)
     return_btn = Button(methodWindow, text="Вернуться",
-                        font=('Arial', 14), command=lambda: [CleanVariables(), methodWindow.destroy(), choice_box.set(""), MethodWindow(method_btn)])
+                        font=('Arial', 14), command=lambda: [CleanVariables(), methodWindow.destroy(), choice_box.set("")])
     return_btn.grid(row=18, sticky=W, padx=10, pady=10)
 
 
