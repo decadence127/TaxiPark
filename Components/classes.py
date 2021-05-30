@@ -47,10 +47,17 @@ class QueryModel:
         elif len(args) == 2:
             self.balance = args[0]
             self.permission = args[1]
+        elif len(args) == 3:
+            self.login = args[0]
+            self.balance = args[1]
+            self.query_token = args[2]
 
     def toJSON(self):
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
+
+    def setRideDistance(self, ride_distance):
+        self.ride_distance = ride_distance
 
 
 class TaxiModel:
@@ -79,9 +86,16 @@ class TaxiModel:
 class AnswerModel:
     balance = 0.0
     answer_message = ""
-    permission: int
+    permission = 0
+    ride_cost = 0.0
+    driver_delay = 0.0
 
     def __init__(self, *args):
+        if len(args) == 4:
+            self.answer_message = args[0]
+            self.balance = args[1]
+            self.driver_delay = args[2]
+            self.ride_cost = args[3]
         if len(args) == 3:
             self.answer_message = args[0]
             self.balance = args[1]

@@ -1,4 +1,5 @@
 import json
+import random
 from re import A
 import psycopg2
 import socket
@@ -112,6 +113,7 @@ def MethodCalculator(projectData):
         calc_moneyLoss = projectData[0]["moneyLoss"]
         calc_negativeProb = projectData[0]["negativeProb"]
         calc_positiveProb = projectData[0]["positiveProb"]
+
         calc_moneyGain1 = projectData[1]["moneyGain"]
         calc_moneyLoss1 = projectData[1]["moneyLoss"]
         calc_negativeProb1 = projectData[1]["negativeProb"]
@@ -142,10 +144,12 @@ def MethodCalculator(projectData):
         calc_moneyLoss = projectData[0]["moneyLoss"]
         calc_negativeProb = projectData[0]["negativeProb"]
         calc_positiveProb = projectData[0]["positiveProb"]
+
         calc_moneyGain1 = projectData[1]["moneyGain"]
         calc_moneyLoss1 = projectData[1]["moneyLoss"]
         calc_negativeProb1 = projectData[1]["negativeProb"]
         calc_positiveProb1 = projectData[1]["positiveProb"]
+
         calc_moneyGain2 = projectData[2]["moneyGain"]
         calc_moneyLoss2 = projectData[2]["moneyLoss"]
         calc_negativeProb2 = projectData[2]["negativeProb"]
@@ -223,11 +227,52 @@ def handle_client(conn, addr):
             BalanceAdditionQuery(res["login"], res["balance"])
         elif(int(res["query_token"] == 9)):
             MethodCalculator(res["projectData"])
+        elif(int(res["query_token"] == 10)):
+            print(res)
+            OrderedTaxiCalculator(
+                res["login"], res["balance"])
 
         else:
             print("Error")
 
     conn.close()
+
+
+def OrderedTaxiCalculator(msg_name, msg_balance):
+    const_price = 5
+    driver_distance = random.uniform(100.0, 5500.0)
+    driver_time_delay = (driver_distance / 1000.0) * 5
+    ride_distance = random.uniform(500.0, 12000.0)
+    ride_cost = const_price + ((ride_distance / 1000.0) * 5)
+    Database()
+    cursor.execute('SELECT "user", pass, id, balance FROM public."user"')
+    rows = cursor.fetchall()
+    order_valid = False
+    for row in rows:
+        print(row)
+        if msg_name == row[0] and float(msg_balance) > 0 and float(msg_balance) <= row[3]:
+            cursor.execute(
+                f'UPDATE public."user" SET balance= (balance -\'{ride_cost}\') WHERE "user" = \'{msg_name}\'')
+            con.commit()
+            cursor.close()
+            con.close()
+            order_valid = True
+            break
+        else:
+            order_valid = False
+
+    if order_valid == True:
+        balance = row[3]
+        answer = AnswerModel("ordered_successfully",
+                             balance, driver_time_delay, ride_cost)
+        JsonObject = answer.toJSON()
+        serialized = json.dumps(JsonObject)
+        conn.sendall(serialized.encode(FORMAT))
+    elif order_valid == False:
+        answer = AnswerModel("order_denied")
+        JsonObject = answer.toJSON()
+        serialized = json.dumps(JsonObject)
+        conn.sendall(serialized.encode(FORMAT))
 
 
 def BalanceAdditionQuery(msg_name, msg_balance):

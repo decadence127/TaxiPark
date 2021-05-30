@@ -61,6 +61,12 @@ METHODNEGATIVE2 = StringVar()
 METHODMONEYLOSS2 = StringVar()
 METHODMONEYGAIN2 = StringVar()
 
+DESTINATION = StringVar()
+
+
+def toFixed(numObj, digits=0):
+    return f"{numObj:.{digits}f}"
+
 
 def SendCarQuery(token, carmodel, drivername, driversurname, drivermiddlename, driverage):
     tempCarmodel = carmodel.get()
@@ -154,6 +160,7 @@ def SendMethodQuery(token, methodPosProb, methodNegProg, methodMoneyLoss, method
 def SendQuery(login, password, token, secret_key):
     if login.get() == "" or login.get() == "":
         box.showerror("Ошибка", "Поля не должны быть пустыми ")
+        LoginPanel()
         return
     else:
         tempLogin = login.get()
@@ -516,15 +523,15 @@ def DashBoardWindow(userProfile):
     btn_logout = Button(dashboardFrame, text="Выйти", font=(
         'Arial', 14), command=lambda: [dashboardFrame.destroy(), dashboardTitleFrame.destroy(), LoginPanel()])
     btn_logout.grid(row=5, columnspan=2, padx=520)
-    btn_add_balance = Button(dashboardFrame, text="Пополнить баланс", font=(
-        'Arial', 14), command=lambda: [BalanceAddition(btn_add_balance, userProfile)])
-    btn_add_balance.grid(row=2, column=0, sticky=W, padx=80, pady=10)
     profile_btn = Button(dashboardFrame, text="Профиль",
                          font=('Arial', 14), command=lambda: [dashboardFrame.destroy(), dashboardTitleFrame.destroy(), ProfilePageFrame(userProfile)])
     profile_btn.grid(row=3, column=0, sticky=W, padx=80, pady=10)
+    order_btn = Button(dashboardFrame, text="Заказать такси", font=(
+        'Arial', 14), command=lambda: [dashboardFrame.destroy(), dashboardTitleFrame.destroy(), TaxiOrder(userProfile)])
+    order_btn.grid(row=4, column=0, sticky=W, padx=80, pady=10)
     method_btn = Button(dashboardFrame, text="Метод", font=(
         'Arial', 14), command=lambda: [MethodWindow(method_btn)])
-    method_btn.grid(row=4, column=0, sticky=W, padx=80, pady=10)
+    method_btn.grid(row=5, column=0, sticky=W, padx=80, pady=10)
 
 
 def MethodWindow(button):
@@ -760,11 +767,52 @@ def ProfilePageFrame(userProfile):
 
     permissions = "Администратор" if userProfile.permission == 1 else "Пользователь/Эксперт"
     lbl_maininfo = Label(profileFrame,
-                         text=f"Логин: {LOGINUSER.get()}. \n{permissions}\n Ваш баланс: {userProfile.balance} руб.", font=('courier', 14), bd=1, width=640)
+                         text=f"Логин: {LOGINUSER.get()}. \n{permissions}\n Ваш баланс: {toFixed(userProfile.balance, 1)} руб.", font=('courier', 14), bd=1, width=640)
     lbl_maininfo.pack()
+    btn_add_balance = Button(profileButtonsFrame, text="Пополнить баланс", font=(
+        'Arial', 14), command=lambda: [BalanceAddition(btn_add_balance, userProfile)])
+    btn_add_balance.grid(row=3, column=0, sticky=W, padx=80, pady=10)
     return_btn = Button(profileButtonsFrame, text="Вернуться",
                         font=('Arial', 14), command=lambda: [profileFrame.destroy(), profileButtonsFrame.destroy(), DashBoardWindow(userProfile)])
-    return_btn.grid(row=3, column=0, sticky=W, padx=80, pady=10)
+    return_btn.grid(row=3, column=1, sticky=W, padx=80, pady=10)
+
+
+def TaxiOrder(userProfile):
+    tempCarList = []
+    tempCarList = RequestDataList(1)
+    sortedList = sorted(tempCarList, key=lambda x: x[0])
+    print(sortedList)
+    print(sortedList[0][0])
+    handlerTitleFrame = Frame(
+        master, height=100, width=640, bd=1, relief=SOLID)
+    handlerTitleFrame.pack(side=TOP)
+    lbl_title = Label(handlerTitleFrame, text="Список доступных водителей", font=(
+        'courier', 14), bd=1, width=640)
+    lbl_title.pack()
+
+    taxiOrderFrame = Frame(master)
+    taxiOrderFrame.pack(side=TOP)
+    text = Listbox(taxiOrderFrame, width=640, bd=1, relief=SOLID)
+    for i in sortedList:
+        text.insert(END, "id: " + str(i[0]) + ". Модель авто: " +
+                    str(i[1]) + " ФИО Водителя: " + str(i[3]) + " " + str(i[2]) + " " + str(i[4]))
+    text.grid()
+    lbl_destination = Label(taxiOrderFrame, text="Введите пункт назначения:",
+                            font=('courier', 14), bd=14)
+    lbl_destination.grid(row=8, sticky=W, pady=10, padx=20)
+
+    reg_user = Entry(taxiOrderFrame, font=('verdana', 16),
+                     textvariable=DESTINATION, width=15)
+    reg_user.grid(sticky=W, row=8, pady=10, padx=330)
+    order_btn = Button(taxiOrderFrame, text="Заказать",
+                       font=('Arial', 14), command=lambda: OrderSelectedTaxi(text, tempCarList, userProfile))
+    order_btn.grid(sticky=W, row=9, pady=10, padx=20)
+    return_btn = Button(taxiOrderFrame, text="Вернуться",
+                        font=('Arial', 14), command=lambda: [taxiOrderFrame.destroy(), handlerTitleFrame.destroy(), DashBoardWindow(userProfile)])
+    return_btn.grid(sticky=W, row=9, pady=10, padx=140)
+    refresh_btn = Button(taxiOrderFrame, text="Обновить",
+                         font=('Arial', 14), command=lambda: [taxiOrderFrame.destroy(), handlerTitleFrame.destroy(), TaxiOrder(userProfile)])
+    refresh_btn.grid(sticky=W, row=9, pady=10, padx=280)
 
 
 def BalanceAddition(button, userProfile):
@@ -850,6 +898,48 @@ def UsersHandlerWindow():
     adduser_btn = Button(userHandlerWindow, text="Добавить", font=(
         'Arial', 14), command=lambda: RegistrationWindow(adduser_btn))
     adduser_btn.pack(side=LEFT, pady=10, padx=20)
+
+
+def OrderSelectedTaxi(text, tempList, userProfile):
+    if DESTINATION.get() == "" or DESTINATION.get() == "":
+        box.showerror("Ошибка", "Введите пункт назначения ")
+        return
+    sortedList = sorted(tempList, key=lambda x: x[2])
+    print(sortedList)
+    userLogin = LOGINUSER.get()
+    userBalance = userProfile.balance
+    for i in text.curselection():
+        tempStr = text.get(i)
+        print(tempStr)
+        orderObjectData = classes.QueryModel(
+            userLogin, userBalance, 10)
+        print(orderObjectData)
+        JsonObject = orderObjectData.toJSON()
+        serialized = json.dumps(JsonObject)
+        client.sendall(serialized.encode(FORMAT))
+
+        order_answer = client.recv(1024).decode(FORMAT)
+        try:
+            order_list = json.loads(order_answer)
+        except (TypeError, ValueError) as e:
+            raise Exception('Data received was not in JSON format')
+        res = json.loads(order_list)
+        print(res)
+        print(res["answer_message"])
+        if str(res["answer_message"]) == "ordered_successfully":
+            est_driver_time = str(res["driver_delay"])
+            ride_cost = str(res["ride_cost"])
+            userProfile.balance = userBalance - float(ride_cost)
+            answerString = f"Ваш заказ был принят! \nОжидайте водителя в течение {toFixed(float(est_driver_time), 2)} мин.\nСтоимость поездки - {toFixed(float(ride_cost),2)} руб."
+            box.showinfo(
+                "Успех!", answerString)
+            text.delete(i)
+        elif str(res["answer_message"]) == "order_denied":
+            box.showerror(
+                "Ошибка!", "Во время обработки заказа произошла ошибка либо у вас на балансе недостаточно средств!")
+        else:
+            box.showerror("Ошибка!", "Неизвестная ошибка!")
+    return userProfile
 
 
 def DeleteSelectedObject(text, tempList, token):
