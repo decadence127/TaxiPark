@@ -134,7 +134,7 @@ def SendMethodQuery(token, methodPosProb, methodNegProg, methodMoneyLoss, method
                     "Метод", "Коэффиценты равны. Можно выбрать любую стратегию")
             elif str(res["answer_message"]) == "calc_error":
                 box.showinfo(
-                    "Метод", "При подсчете коэффицентов произошла ошибка. \nПерепроверте введенные данные")
+                    "Метод", "При подсчете коэффицентов произошла ошибка. \nПерепроверьте введенные данные")
 
         else:
             box.showerror(
@@ -166,6 +166,12 @@ def SendMethodQuery(token, methodPosProb, methodNegProg, methodMoneyLoss, method
                 box.showinfo("Метод", "Стратегия 2 будет наилучшим выбором")
             elif str(res["answer_message"]) == "method3_best":
                 box.showinfo("Метод", "Стратегия 3 будет наилучшим выбором")
+            elif str(res["answer_message"]) == "variables_equal":
+                box.showinfo(
+                    "Метод", "Коэффиценты равны. Можно выбрать любую стратегию")
+            elif str(res["answer_message"]) == "calc_error":
+                box.showinfo(
+                    "Метод", "При подсчете коэффицентов произошла ошибка. \nПерепроверьте введенные данные")
         else:
             box.showerror(
                 "Ошибка", "Сумма вероятностей не должна превышать 1!")
