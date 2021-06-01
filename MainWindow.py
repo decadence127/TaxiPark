@@ -138,7 +138,7 @@ def SendMethodQuery(token, methodPosProb, methodNegProg, methodMoneyLoss, method
 
         else:
             box.showerror(
-                "Ошибка", "Сумма вероятностей не должна превышать 1!")
+                "Ошибка", "Сумма вероятностей должна равняться 1!")
 
     elif token == 1:
         if tempPosProb == "" or tempNegProb == "" or tempMoneyLoss == "" or tempMoneyGain == "" or tempPosProb1 == "" or tempNegProb1 == "" or tempMoneyLoss1 == "" or tempMoneyGain1 == "" or tempPosProb2 == "" or tempNegProb2 == "" or tempMoneyLoss2 == "" or tempMoneyGain2 == "":

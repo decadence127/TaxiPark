@@ -3,6 +3,7 @@ import random
 import psycopg2
 import socket
 import threading
+from datetime import datetime
 from Components.classes import AnswerModel
 
 HEADER = 64
@@ -107,6 +108,7 @@ def databaseDataRequest(token):
 
 
 def MethodCalculator(projectData):
+    f = open('MethodResult.txt', 'a')
     if len(projectData) == 2:
         calc_moneyGain = projectData[0]["moneyGain"]
         calc_moneyLoss = projectData[0]["moneyLoss"]
@@ -126,21 +128,70 @@ def MethodCalculator(projectData):
         print(total_result2)
 
         if total_result1 > total_result2:
-            print(
-                f"Наиболее целесообразно выбрать стратегию 1, т.е. расширить охват города на юг, стратегию 2 можно отбросить. ОДО наилучшего решения равна {total_result1} руб.")
+            d = datetime.now()
+            f.write(
+                f"Дата создания данного отчета: {d.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Вероятность успеха стратегии 1: {calc_positiveProb}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 1: {calc_negativeProb}\n")
+            f.write(f"Сумма выигрыша стратегии 1: {calc_moneyGain} руб.\n")
+            f.write(f"Сумма потерь стратегии 1: {calc_moneyLoss} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 2: {calc_positiveProb1}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 2: {calc_negativeProb1}\n")
+            f.write(f"Сумма выигрыша стратегии 2: {calc_moneyGain1} руб.\n")
+            f.write(f"Сумма потерь стратегии 2: {calc_moneyLoss1} руб.\n\n")
+            f.write(f"ОДО для первой стратегии: {total_result1} руб.\n")
+            f.write(f"ОДО для второй стратегии: {total_result2} руб.\n")
+            f.write(
+                f"Наиболее целесообразно выбрать стратегию 1, т.е. расширить охват города на юг, стратегию 2 можно отбросить. ОДО наилучшего решения равна {total_result1} руб.\n\n")
+            f.close()
             answer = AnswerModel("method1_best")
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))
         elif total_result2 > total_result1:
-            print(
-                f"Наиболее целесообразно выбрать стратегию 2, т.е. расширить охват города на север, а стратегию 1 можно отбросить. ОДО наилучшего решения равна {total_result2} руб.")
+            d = datetime.now()
+            f.write(
+                f"Дата создания данного отчета: {d.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Вероятность успеха стратегии 1: {calc_positiveProb}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 1: {calc_negativeProb}\n")
+            f.write(f"Сумма выигрыша стратегии 1: {calc_moneyGain} руб.\n")
+            f.write(f"Сумма потерь стратегии 1: {calc_moneyLoss} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 2: {calc_positiveProb1}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 2: {calc_negativeProb1}\n")
+            f.write(f"Сумма выигрыша стратегии 2: {calc_moneyGain1} руб.\n")
+            f.write(f"Сумма потерь стратегии 2: {calc_moneyLoss1} руб.\n\n")
+            f.write(f"ОДО для первой стратегии: {total_result1} руб.\n")
+            f.write(f"ОДО для второй стратегии: {total_result2} руб.\n")
+            f.write(
+                f"Наиболее целесообразно выбрать стратегию 2, т.е. расширить охват города на север, а стратегию 1 можно отбросить. ОДО наилучшего решения равна {total_result2} руб.\n\n")
+            f.close()
             answer = AnswerModel("method2_best")
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))
         elif total_result1 == total_result2:
-            print("Коэффиценты проектов равны")
+            d = datetime.now()
+            f.write(
+                f"Дата создания данного отчета: {d.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Вероятность успеха стратегии 1: {calc_positiveProb}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 1: {calc_negativeProb}\n")
+            f.write(f"Сумма выигрыша стратегии 1: {calc_moneyGain} руб.\n")
+            f.write(f"Сумма потерь стратегии 1: {calc_moneyLoss} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 2: {calc_positiveProb1}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 2: {calc_negativeProb1}\n")
+            f.write(f"Сумма выигрыша стратегии 2: {calc_moneyGain1} руб.\n")
+            f.write(f"Сумма потерь стратегии 2: {calc_moneyLoss1} руб.\n\n")
+            f.write(f"ОДО для первой стратегии: {total_result1} руб.\n")
+            f.write(f"ОДО для второй стратегии: {total_result2} руб.\n")
+            f.write(
+                "Коэффиценты проектов равны. Можно использовать любую стратегию\n\n")
+            f.close()
             answer = AnswerModel("variables_equal")
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
@@ -178,32 +229,124 @@ def MethodCalculator(projectData):
         print(total_result3)
 
         if total_result1 > total_result2 and total_result1 > total_result3:
-            print(
-                f"Наиболее целесообразно выбрать стратегию 1, т.е. расширить охват города на юг, а стратегии 2 и 3 можно отбросить. ОДО наилучшего решения равна {total_result1} руб.")
+            d = datetime.now()
+            f.write(
+                f"Дата создания данного отчета: {d.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Вероятность успеха стратегии 1: {calc_positiveProb}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 1: {calc_negativeProb}\n")
+            f.write(f"Сумма выигрыша стратегии 1: {calc_moneyGain} руб.\n")
+            f.write(f"Сумма потерь стратегии 1: {calc_moneyLoss} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 2: {calc_positiveProb1}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 2: {calc_negativeProb1}\n")
+            f.write(f"Сумма выигрыша стратегии 2: {calc_moneyGain1} руб.\n")
+            f.write(f"Сумма потерь стратегии 2: {calc_moneyLoss1} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 3: {calc_positiveProb2}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 3: {calc_negativeProb2}\n")
+            f.write(f"Сумма выигрыша стратегии 3: {calc_moneyGain2} руб.\n")
+            f.write(f"Сумма потерь стратегии 3: {calc_moneyLoss2} руб.\n\n")
+
+            f.write(f"ОДО для первой стратегии: {total_result1} руб.\n")
+            f.write(f"ОДО для второй стратегии: {total_result2} руб.\n")
+            f.write(f"ОДО для третьей стратегии: {total_result3} руб.\n")
+            f.write(
+                f"Наиболее целесообразно выбрать стратегию 1, т.е. расширить охват города на юг, а стратегии 2 и 3 можно отбросить. ОДО наилучшего решения равна {total_result1} руб.\n\n")
+            f.close()
             answer = AnswerModel("method1_best")
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))
         elif total_result2 > total_result1 and total_result2 > total_result3:
-            print(
-                f"Наиболее целесообразно выбрать стратегию 2, т.е. расширить охват города на север, а стратегии 1 и 3 можно отбросить. ОДО наилучшего решения равна {total_result2} руб.")
+            d = datetime.now()
+            f.write(
+                f"Дата создания данного отчета: {d.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Вероятность успеха стратегии 1: {calc_positiveProb}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 1: {calc_negativeProb}\n")
+            f.write(f"Сумма выигрыша стратегии 1: {calc_moneyGain} руб.\n")
+            f.write(f"Сумма потерь стратегии 1: {calc_moneyLoss} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 2: {calc_positiveProb1}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 2: {calc_negativeProb1}\n")
+            f.write(f"Сумма выигрыша стратегии 2: {calc_moneyGain1} руб.\n")
+            f.write(f"Сумма потерь стратегии 2: {calc_moneyLoss1} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 3: {calc_positiveProb2}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 3: {calc_negativeProb2}\n")
+            f.write(f"Сумма выигрыша стратегии 3: {calc_moneyGain2} руб.\n")
+            f.write(f"Сумма потерь стратегии 3: {calc_moneyLoss2} руб.\n\n")
+
+            f.write(f"ОДО для первой стратегии: {total_result1} руб.\n")
+            f.write(f"ОДО для второй стратегии: {total_result2} руб.\n")
+            f.write(f"ОДО для третьей стратегии: {total_result3} руб.\n")
+            f.write(
+                f"Наиболее целесообразно выбрать стратегию 2, т.е. расширить охват города на север, а стратегии 1 и 3 можно отбросить. ОДО наилучшего решения равна {total_result2} руб.\n\n")
+            f.close()
             answer = AnswerModel("method2_best")
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))
         elif total_result3 > total_result1 and total_result3 > total_result2:
-            print(
-                f"Наиболее целесообразно выбрать стратегию 3, т.е. расширить охват за городом, а стратегии 1 и 2 можно отбросить. ОДО наилучшего решения равна {total_result3} руб.")
+            d = datetime.now()
+            f.write(
+                f"Дата создания данного отчета: {d.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Вероятность успеха стратегии 1: {calc_positiveProb}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 1: {calc_negativeProb}\n")
+            f.write(f"Сумма выигрыша стратегии 1: {calc_moneyGain} руб.\n")
+            f.write(f"Сумма потерь стратегии 1: {calc_moneyLoss} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 2: {calc_positiveProb1}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 2: {calc_negativeProb1}\n")
+            f.write(f"Сумма выигрыша стратегии 2: {calc_moneyGain1} руб.\n")
+            f.write(f"Сумма потерь стратегии 2: {calc_moneyLoss1} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 3: {calc_positiveProb2}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 3: {calc_negativeProb2}\n")
+            f.write(f"Сумма выигрыша стратегии 3: {calc_moneyGain2} руб.\n")
+            f.write(f"Сумма потерь стратегии 3: {calc_moneyLoss2} руб.\n\n")
+
+            f.write(f"ОДО для первой стратегии: {total_result1} руб.\n")
+            f.write(f"ОДО для второй стратегии: {total_result2} руб.\n")
+            f.write(f"ОДО для третьей стратегии: {total_result3} руб.\n")
+            f.write(
+                f"Наиболее целесообразно выбрать стратегию 3, т.е. расширить охват за городом, а стратегии 1 и 2 можно отбросить. ОДО наилучшего решения равна {total_result3} руб.\n\n")
+            f.close()
             answer = AnswerModel("method3_best")
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))
         elif total_result1 == total_result2 == total_result3:
+            d = datetime.now()
+            f.write(
+                f"Дата создания данного отчета: {d.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Вероятность успеха стратегии 1: {calc_positiveProb}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 1: {calc_negativeProb}\n")
+            f.write(f"Сумма выигрыша стратегии 1: {calc_moneyGain} руб.\n")
+            f.write(f"Сумма потерь стратегии 1: {calc_moneyLoss} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 2: {calc_positiveProb1}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 2: {calc_negativeProb1}\n")
+            f.write(f"Сумма выигрыша стратегии 2: {calc_moneyGain1} руб.\n")
+            f.write(f"Сумма потерь стратегии 2: {calc_moneyLoss1} руб.\n\n")
+            f.write(f"Вероятность успеха стратегии 3: {calc_positiveProb2}\n")
+            f.write(
+                f"Вероятность проигрыша стратегии 3: {calc_negativeProb2}\n")
+            f.write(f"Сумма выигрыша стратегии 3: {calc_moneyGain2} руб.\n")
+            f.write(f"Сумма потерь стратегии 3: {calc_moneyLoss2} руб.\n\n")
+
+            f.write(f"ОДО для первой стратегии: {total_result1} руб.\n")
+            f.write(f"ОДО для второй стратегии: {total_result2} руб.\n")
+            f.write(f"ОДО для третьей стратегии: {total_result3} руб.\n")
+            f.write("Коэффиценты проектов равны. Можно выбрать любую стратегию\n\n.")
+            f.close()
             answer = AnswerModel("variables_equal")
             JsonObject = answer.toJSON()
             serialized = json.dumps(JsonObject)
             conn.sendall(serialized.encode(FORMAT))
-            print("Коэффиценты проектов равны")
         else:
             answer = AnswerModel("calc_error")
             JsonObject = answer.toJSON()
@@ -296,6 +439,7 @@ def CarSearchDatabaseQuery(msg_string):
 
     con.commit()
     cursor.close()
+
     con.close()
 
 
@@ -304,8 +448,8 @@ def OrderedTaxiCalculator(msg_name, msg_balance):
     driver_distance = random.uniform(100.0, 5500.0)
     driver_time_delay = (driver_distance / 1000.0) * 5
     ride_distance = random.uniform(500.0, 12000.0)
-    ride_cost = const_price + ((ride_distance / 1000.0) * 5)
     Database()
+    ride_cost = const_price + ((ride_distance / 1000.0) * 5)
     cursor.execute('SELECT "user", pass, id, balance FROM public."user"')
     rows = cursor.fetchall()
     order_valid = False
