@@ -56,9 +56,6 @@ class QueryModel:
         return json.dumps(self, default=lambda o: o.__dict__,
                           sort_keys=True, indent=4)
 
-    def setRideDistance(self, ride_distance):
-        self.ride_distance = ride_distance
-
 
 class TaxiModel:
 
